@@ -67,3 +67,14 @@ func LoginByEmailService(email, password string) error {
 
 	return nil
 }
+
+// GetUserByEmail loads a user by email into provided pointer
+func GetUserByEmail(email string, out *models.User) error {
+	email = utils.SanitizeEmail(email)
+	return connection.DB.Where("email = ?", email).First(out).Error
+}
+
+// GetUserByStudentID loads a user by student id into provided pointer
+func GetUserByStudentID(studentID string, out *models.User) error {
+	return connection.DB.Where("student_id = ?", studentID).First(out).Error
+}

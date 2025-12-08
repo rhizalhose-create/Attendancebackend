@@ -4,6 +4,9 @@ package controller
 import (
 	"attendance-system/models"
 	"attendance-system/services"
+	"attendance-system/utils"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,9 +20,27 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	// Fetch user profile so caller gets the current role immediately
+	// Determine lookup key (email vs student id)
+	var user models.User
+	if strings.Contains(req.StudentID, "@") {
+		// login by email
+		if err := services.GetUserByEmail(req.StudentID, &user); err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user profile"})
+		}
+	} else {
+		sid := utils.SanitizeStudentID(req.StudentID)
+		if err := services.GetUserByStudentID(sid, &user); err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user profile"})
+		}
+	}
+
 	return c.JSON(fiber.Map{
-		"message": "Login successful",
-		"student_id": req.StudentID,
+		"message":    "Login successful",
+		"student_id": user.StudentID,
+		"role":       user.Role,
+		"first_name": user.FirstName,
+		"last_name":  user.LastName,
 	})
 }
 
@@ -39,8 +60,17 @@ func LoginByEmail(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	var user models.User
+	if err := services.GetUserByEmail(req.Email, &user); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user profile"})
+	}
+
 	return c.JSON(fiber.Map{
-		"message": "Login successful",
-		"email": req.Email,
+		"message":    "Login successful",
+		"email":      req.Email,
+		"student_id": user.StudentID,
+		"role":       user.Role,
+		"first_name": user.FirstName,
+		"last_name":  user.LastName,
 	})
 }
