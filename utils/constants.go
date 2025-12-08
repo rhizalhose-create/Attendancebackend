@@ -9,4 +9,6 @@ const (
 	ErrInvalidAttendanceID = "Invalid attendance ID"
 	ErrUnauthorized        = "Unauthorized"
 	ErrUserNotFound        = "User not found"
+	// ReCAPTCHA
+	ErrRecaptchaVerificationFailed = "recaptcha verification failed"
 )

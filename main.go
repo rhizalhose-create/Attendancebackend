@@ -76,6 +76,35 @@ func main() {
 		})
 	})
 
+	// Debug: echo client info (IP + some headers)
+	app.Get("/debug/echo", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"remote_ip":       c.IP(),
+			"user_agent":      c.Get("User-Agent"),
+			"host":            c.Get("Host"),
+			"x_forwarded_for": c.Get("X-Forwarded-For"),
+		})
+	})
+
+	// Debug: verify recaptcha token (POST JSON { "token": "...", "action": "login" })
+	app.Post("/debug/recaptcha", func(c *fiber.Ctx) error {
+		req := struct {
+			Token  string `json:"token"`
+			Action string `json:"action"`
+		}{}
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+		}
+		ok, err := services.VerifyRecaptcha(req.Token, c.IP(), req.Action)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"ok": ok, "error": err.Error()})
+		}
+		if !ok {
+			return c.Status(400).JSON(fiber.Map{"ok": false, "message": "verification failed"})
+		}
+		return c.JSON(fiber.Map{"ok": true, "message": "verification passed"})
+	})
+
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "healthy",

@@ -17,22 +17,28 @@ type Event struct {
 	YearLevel   string    `json:"year_level" gorm:"type:varchar(50)"`
 	Department  string    `json:"department" gorm:"type:varchar(100)"`
 	College     string    `json:"college" gorm:"type:varchar(100)"`
-	
+
 	// Event creator/owner
-	CreatedBy   string    `json:"created_by" gorm:"not null;type:varchar(255)"` // StudentID of creator
-	CreatedByRole string  `json:"created_by_role" gorm:"type:varchar(50);default:'faculty'"`
-	
+	CreatedBy     string `json:"created_by" gorm:"not null;type:varchar(255)"` // StudentID of creator
+	CreatedByRole string `json:"created_by_role" gorm:"type:varchar(50);default:'faculty'"`
+
 	// Status
-	Status      string    `json:"status" gorm:"type:varchar(50);default:'scheduled'"` // scheduled, ongoing, completed, cancelled
-	IsActive    bool      `json:"is_active" gorm:"default:true"`
-	
+	Status   string `json:"status" gorm:"type:varchar(50);default:'scheduled'"` // scheduled, ongoing, completed, cancelled
+	IsActive bool   `json:"is_active" gorm:"default:true"`
+
 	// QR Code for this event
-	QRCodeData  string    `json:"qr_code_data,omitempty" gorm:"type:text"`
-	
+	QRCodeData string `json:"qr_code_data,omitempty" gorm:"type:text"`
+	// TaggedCoursesCSV stores comma-separated course tags (e.g., "CS,IT,EE").
+	// Use `TaggedCourses` (transient) for JSON response.
+	TaggedCoursesCSV string `json:"-" gorm:"type:text;column:tagged_courses"`
+	// Transient fields (not persisted by GORM)
+	TaggedCourses []string `json:"tagged_courses,omitempty" gorm:"-"`
+	Allowed       bool     `json:"allowed,omitempty" gorm:"-"`
+
 	// Timestamps
-	CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"autoUpdateTime"`
-	
+	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+
 	// Relationships
 	Attendances []Attendance `json:"attendances,omitempty" gorm:"foreignKey:EventID"`
 }
@@ -50,5 +56,6 @@ type EventRequest struct {
 	YearLevel   string `json:"year_level"`
 	Department  string `json:"department"`
 	College     string `json:"college"`
+	// Support tagging multiple courses on create/update
+	TaggedCourses []string `json:"tagged_courses,omitempty"`
 }
-

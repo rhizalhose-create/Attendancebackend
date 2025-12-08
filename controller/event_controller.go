@@ -7,6 +7,7 @@ import (
 	"attendance-system/services"
 	"attendance-system/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,7 +16,23 @@ import (
 func CreateEvent(c *fiber.Ctx) error {
 	req := new(models.EventRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request format"})
+		// Try to be permissive: if BodyParser fails (client may have sent form-data),
+		// continue and attempt to read form fields where possible. We'll only fail
+		// later if required fields are missing.
+		// Note: keep original behavior for strict JSON clients.
+	}
+
+	// Fallback: support `tagged_courses` as a CSV form value when clients send form-data
+	if len(req.TaggedCourses) == 0 {
+		if raw := c.FormValue("tagged_courses"); raw != "" {
+			parts := strings.Split(raw, ",")
+			for _, p := range parts {
+				p = strings.ToUpper(strings.TrimSpace(p))
+				if p != "" {
+					req.TaggedCourses = append(req.TaggedCourses, p)
+				}
+			}
+		}
 	}
 
 	// Validate required fields

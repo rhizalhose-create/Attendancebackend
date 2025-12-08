@@ -17,6 +17,9 @@ const (
 	StatusWhere          = "status = ?"
 )
 
+// Sentinel error returned when a student is not allowed to enter a tagged event
+var ErrEventAccessDenied = errors.New("you are not allowed to enter this event")
+
 // MarkAttendance marks attendance for a student in an event (check-in or check-out)
 func MarkAttendance(req models.AttendanceRequest, markedBy, markedByRole string) (*models.Attendance, error) {
 	// Validate and load required data
@@ -35,6 +38,11 @@ func MarkAttendance(req models.AttendanceRequest, markedBy, markedByRole string)
 		return nil, err
 	}
 
+	// Enforce course-tag restrictions (students only)
+	if err := enforceEventCourseAccess(event, student, markedByRole); err != nil {
+		return nil, err
+	}
+
 	now := time.Now()
 	attendance, isNew := findOrInitAttendance(req, studentID, markedBy, markedByRole, now)
 
@@ -50,15 +58,9 @@ func MarkAttendance(req models.AttendanceRequest, markedBy, markedByRole string)
 		}
 	}
 
-	// Update or create attendance
-	if isNew {
-		if err := createAttendanceRaw(&attendance); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := connection.DB.Save(&attendance).Error; err != nil {
-			return nil, fmt.Errorf("failed to update attendance: %v", err)
-		}
+	// Persist attendance (create or update)
+	if err := persistAttendance(&attendance, isNew); err != nil {
+		return nil, err
 	}
 
 	// Attach student info to the returned attendance so callers (e.g., admin scan)
@@ -193,6 +195,38 @@ func createAttendanceRaw(att *models.Attendance) error {
 	return nil
 }
 
+// enforceEventCourseAccess returns error when a student is not allowed to enter a tagged event.
+func enforceEventCourseAccess(event models.Event, student models.User, markedByRole string) error {
+	if event.TaggedCoursesCSV == "" {
+		return nil
+	}
+	if markedByRole != "student" {
+		// admins/faculty bypass
+		return nil
+	}
+
+	parts := strings.Split(event.TaggedCoursesCSV, ",")
+	userCourse := strings.ToUpper(strings.TrimSpace(student.Course))
+	for _, c := range parts {
+		if strings.ToUpper(strings.TrimSpace(c)) == userCourse {
+			return nil
+		}
+	}
+	return ErrEventAccessDenied
+}
+
+// persistAttendance saves or creates the attendance record. If isNew is true,
+// it creates the record (with sequence-resync retry); otherwise it updates.
+func persistAttendance(att *models.Attendance, isNew bool) error {
+	if isNew {
+		return createAttendanceRaw(att)
+	}
+	if err := connection.DB.Save(att).Error; err != nil {
+		return fmt.Errorf("failed to update attendance: %v", err)
+	}
+	return nil
+}
+
 // sendCheckInNotification sends email to admin when student checks in
 func sendCheckInNotification(event models.Event, student models.User, checkInTime time.Time, status string) {
 	// Get admin emails (event creator and all admins/faculty)
@@ -222,22 +256,21 @@ func sendCheckInNotification(event models.Event, student models.User, checkInTim
 		"late":    "Late",
 	}[status]
 
-	emailBody := fmt.Sprintf(`
-		<h2>Student Check-In Notification</h2>
-		<p><strong>Event:</strong> %s</p>
+	content := fmt.Sprintf(`<p><strong>Event:</strong> %s</p>
 		<p><strong>Student:</strong> %s %s (%s)</p>
 		<p><strong>Student ID:</strong> %s</p>
 		<p><strong>Check-In Time:</strong> %s</p>
 		<p><strong>Status:</strong> %s</p>
-		<p><strong>Location:</strong> %s</p>
-		<hr>
-		<p><small>This is an automated notification from the Attendance System.</small></p>
-	`, event.Title, student.FirstName, student.LastName, student.Username, student.StudentID, timeStr, statusText, event.Location)
+		<p><strong>Location:</strong> %s</p>`, event.Title, student.FirstName, student.LastName, student.Username, student.StudentID, timeStr, statusText, event.Location)
+
+	footer := `<p class="muted">This is an automated notification from the Attendance System.</p>`
+
+	htmlBody := BuildHTMLEmail("Student check-in", "Student Check-In Notification", content, footer)
 
 	// Send email to all admins
 	for _, admin := range admins {
 		if admin.Email != "" {
-			SendEmail(admin.Email, fmt.Sprintf("Check-In: %s %s - %s", student.FirstName, student.LastName, event.Title), emailBody)
+			SendEmail(admin.Email, fmt.Sprintf("Check-In: %s %s - %s", student.FirstName, student.LastName, event.Title), htmlBody)
 		}
 	}
 }
@@ -271,22 +304,21 @@ func sendCheckOutNotification(event models.Event, student models.User, checkOutT
 		"late":    "Left Late",
 	}[status]
 
-	emailBody := fmt.Sprintf(`
-		<h2>Student Check-Out Notification</h2>
-		<p><strong>Event:</strong> %s</p>
+	content := fmt.Sprintf(`<p><strong>Event:</strong> %s</p>
 		<p><strong>Student:</strong> %s %s (%s)</p>
 		<p><strong>Student ID:</strong> %s</p>
 		<p><strong>Check-Out Time:</strong> %s</p>
 		<p><strong>Status:</strong> %s</p>
-		<p><strong>Location:</strong> %s</p>
-		<hr>
-		<p><small>This is an automated notification from the Attendance System.</small></p>
-	`, event.Title, student.FirstName, student.LastName, student.Username, student.StudentID, timeStr, statusText, event.Location)
+		<p><strong>Location:</strong> %s</p>`, event.Title, student.FirstName, student.LastName, student.Username, student.StudentID, timeStr, statusText, event.Location)
+
+	footer := `<p class="muted">This is an automated notification from the Attendance System.</p>`
+
+	htmlBody := BuildHTMLEmail("Student check-out", "Student Check-Out Notification", content, footer)
 
 	// Send email to all admins
 	for _, admin := range admins {
 		if admin.Email != "" {
-			SendEmail(admin.Email, fmt.Sprintf("Check-Out: %s %s - %s", student.FirstName, student.LastName, event.Title), emailBody)
+			SendEmail(admin.Email, fmt.Sprintf("Check-Out: %s %s - %s", student.FirstName, student.LastName, event.Title), htmlBody)
 		}
 	}
 }

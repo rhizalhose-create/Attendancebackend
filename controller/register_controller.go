@@ -4,14 +4,23 @@ package controller
 import (
 	"attendance-system/models"
 	"attendance-system/services"
+	"attendance-system/utils"
+
 	"github.com/gofiber/fiber/v2"
 )
 
 func Register(c *fiber.Ctx) error {
 	req := new(models.RegisterRequest)
-	
+
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request format"})
+	}
+
+	// Verify reCAPTCHA token (if configured)
+	if ok, err := services.VerifyRecaptcha(req.RecaptchaToken, c.IP(), "register"); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
+	} else if !ok {
+		return c.Status(400).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
 	}
 
 	// Validate required fields (StudentID is now optional)
@@ -38,8 +47,8 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message":     "Registration successful. Please check your email for verification code and your Student ID.",
-		"status":      "pending_verification",
-		"student_id":  generatedStudentID, // Include the generated StudentID in response
+		"message":    "Registration successful. Please check your email for verification code and your Student ID.",
+		"status":     "pending_verification",
+		"student_id": generatedStudentID, // Include the generated StudentID in response
 	})
 }

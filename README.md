@@ -147,6 +147,65 @@ SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
 ```
 
+## reCAPTCHA Login Integration
+
+Follow these steps to make the reCAPTCHA challenge appear when users click the Login button and to send the token with the login request.
+
+- **Site key (frontend)**: use the `RECAPTCHA_SITE_KEY` value from your `.env` and include the script on your login page.
+- **Secret key (backend)**: keep `RECAPTCHA_SECRET_KEY` in your server `.env` (already supported by this project).
+
+Frontend — reCAPTCHA v3 (recommended, invisible):
+
+1. Add the script to your HTML (replace `YOUR_SITE_KEY` with the site key):
+
+```html
+<script src="https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY"></script>
+```
+
+2. On login button click, get a token and send it to the backend with the login POST:
+
+```javascript
+const SITE_KEY = "YOUR_SITE_KEY";
+grecaptcha.ready(() => {
+  grecaptcha.execute(SITE_KEY, { action: 'login' }).then(token => {
+    fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_id: studentIdValue,
+        password: passwordValue,
+        recaptcha_token: token
+      })
+    }).then(r => r.json()).then(console.log);
+  });
+});
+```
+
+Frontend — Invisible reCAPTCHA v2 (optional):
+
+```html
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<button id="loginBtn">Login</button>
+<div style="display:none">
+  <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY" data-size="invisible" data-callback="onRecaptchaSuccess"></div>
+</div>
+<script>
+function onRecaptchaSuccess(token) {
+  fetch('/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ student_id: studentIdValue, password: passwordValue, recaptcha_token: token })
+  }).then(r => r.json()).then(console.log);
+}
+document.getElementById('loginBtn').addEventListener('click', () => grecaptcha.execute());
+</script>
+```
+
+Notes:
+- The backend requires `recaptcha_token` in the JSON payload for both `/login` and `/login/email` endpoints when `RECAPTCHA_SECRET_KEY` is present in `.env`.
+- If you remove the secret from `.env` (development only), the server will skip verification to make local testing easier.
+
+
 ## Database Setup
 
 Run the SQL file to create tables:

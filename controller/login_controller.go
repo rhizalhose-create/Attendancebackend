@@ -10,10 +10,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const failedFetchUserProfile = "failed to fetch user profile"
+
 func Login(c *fiber.Ctx) error {
 	req := new(models.LoginRequest)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	// Verify reCAPTCHA token if configured
+	if ok, err := services.VerifyRecaptcha(req.RecaptchaToken, c.IP(), "login"); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
+	} else if !ok {
+		return c.Status(400).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
 	}
 
 	if err := services.LoginService(*req); err != nil {
@@ -26,12 +35,12 @@ func Login(c *fiber.Ctx) error {
 	if strings.Contains(req.StudentID, "@") {
 		// login by email
 		if err := services.GetUserByEmail(req.StudentID, &user); err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user profile"})
+			return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
 		}
 	} else {
 		sid := utils.SanitizeStudentID(req.StudentID)
 		if err := services.GetUserByStudentID(sid, &user); err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user profile"})
+			return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
 		}
 	}
 
@@ -47,13 +56,20 @@ func Login(c *fiber.Ctx) error {
 // Optional: Add login by email endpoint
 func LoginByEmail(c *fiber.Ctx) error {
 	type EmailLoginRequest struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email          string `json:"email"`
+		Password       string `json:"password"`
+		RecaptchaToken string `json:"recaptcha_token,omitempty"`
 	}
 
 	req := new(EmailLoginRequest)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
+	// Verify reCAPTCHA token if configured
+	if ok, err := services.VerifyRecaptcha(req.RecaptchaToken, c.IP(), "login"); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
+	} else if !ok {
+		return c.Status(400).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
 	}
 
 	if err := services.LoginByEmailService(req.Email, req.Password); err != nil {
@@ -62,7 +78,7 @@ func LoginByEmail(c *fiber.Ctx) error {
 
 	var user models.User
 	if err := services.GetUserByEmail(req.Email, &user); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "failed to fetch user profile"})
+		return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
 	}
 
 	return c.JSON(fiber.Map{

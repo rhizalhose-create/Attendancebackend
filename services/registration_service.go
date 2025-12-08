@@ -194,17 +194,16 @@ func createPendingUser(req models.RegisterRequest, studentID, hashedPassword, ve
 }
 
 func sendVerificationEmail(email, studentID, verificationCode string) error {
-	emailBody := fmt.Sprintf(`
-		<h1>Email Verification</h1>
-		<p>Thank you for registering!</p>
-		<p><strong>Your Student ID:</strong> %s</p>
-		<p><strong>Your verification code:</strong> <span style="font-size: 24px; font-weight: bold;">%s</span></p>
-		<p>Enter this code on the verification page to complete your registration.</p>
-		<p>This code will expire in 30 minutes.</p>
-		<p><strong>Save your Student ID!</strong> You will need it to log in.</p>
-		<hr>
-		<p><small>If you did not register, please ignore this email.</small></p>
+	// Build modern HTML email
+	content := fmt.Sprintf(`<p>Thank you for registering with the Attendance System.</p>
+		<p><strong>Student ID:</strong> <code>%s</code></p>
+		<p><strong>Verification code:</strong></p>
+		<p style="font-size:22px; font-weight:700; letter-spacing:2px;">%s</p>
+		<p>This code will expire in 30 minutes. Enter it on the verification page to complete your registration.</p>
 	`, studentID, verificationCode)
 
-	return SendEmail(email, "Verification Code - Attendance System", emailBody)
+	footer := `<p class="muted">If you did not register, please ignore this message.</p>`
+	htmlBody := BuildHTMLEmail("Verify your email", "Email Verification", content, footer)
+
+	return SendEmail(email, "Verification Code - Attendance System", htmlBody)
 }

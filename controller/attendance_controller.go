@@ -54,6 +54,10 @@ func MarkAttendance(c *fiber.Ctx) error {
 
 	attendance, err := services.MarkAttendance(*req, user.StudentID, user.Role)
 	if err != nil {
+		// Map service-level access denial to HTTP 403
+		if err == services.ErrEventAccessDenied {
+			return c.Status(403).JSON(fiber.Map{"error": err.Error()})
+		}
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 

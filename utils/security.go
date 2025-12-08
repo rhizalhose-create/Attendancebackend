@@ -49,13 +49,13 @@ func GenerateSecureCode(length int) (string, error) {
 		return "", fmt.Errorf("failed to generate random code: %w", err)
 	}
 
-	// Convert to uint64 and take modulo
+	// Convert to uint64 and take modulo safely (avoid signed overflow)
 	randomValue := binary.BigEndian.Uint64(b)
-	code := int64(randomValue) % maxValue
+	codeNum := randomValue % uint64(maxValue)
 
 	// Format with leading zeros
 	format := fmt.Sprintf("%%0%dd", length)
-	return fmt.Sprintf(format, code), nil
+	return fmt.Sprintf(format, int(codeNum)), nil
 }
 
 // GenerateVerificationCode generates a 6-digit verification code
