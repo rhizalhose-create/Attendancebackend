@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
+import 'package:dio/dio.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/courses.dart';
 import 'events_list_screen.dart';
@@ -19,8 +20,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _sectionController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
-  String? _selectedCourse;
-  String? _selectedYearLevel;
+  List<String> _selectedCourses = [];
+  List<String> get _coursesSafe => _selectedCourses;
+  List<String> _selectedYearLevels = [];
+  List<String> get _yearLevelsSafe => _selectedYearLevels;
 
   DateTime? _eventDate;
   TimeOfDay? _startTime;
@@ -91,6 +94,107 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
+  Future<void> _showCourseMultiSelect() async {
+    // temporary set to allow cancel
+    final tempSelected = List<String>.from(_coursesSafe);
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Select Courses'),
+          content: StatefulBuilder(
+            builder: (context, setStateSB) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: Courses.courseList.map((course) {
+                    final selected = tempSelected.contains(course);
+                    return CheckboxListTile(
+                      value: selected,
+                      title: Text(course),
+                      onChanged: (v) {
+                        setStateSB(() {
+                          if (v == true) {
+                            tempSelected.add(course);
+                          } else {
+                            tempSelected.remove(course);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() => _selectedCourses = List.from(tempSelected));
+                Navigator.of(context).pop();
+              },
+              child: Text('Done'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showYearLevelMultiSelect() async {
+    final tempSelected = List<String>.from(_yearLevelsSafe);
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Select Year Levels'),
+          content: StatefulBuilder(
+            builder: (context, setStateSB) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: Courses.yearLevels.map((year) {
+                    final selected = tempSelected.contains(year);
+                    return CheckboxListTile(
+                      value: selected,
+                      title: Text(year),
+                      onChanged: (v) {
+                        setStateSB(() {
+                          if (v == true) {
+                            tempSelected.add(year);
+                          } else {
+                            tempSelected.remove(year);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() => _selectedYearLevels = List.from(tempSelected));
+                Navigator.of(context).pop();
+              },
+              child: Text('Done'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleCreate() async {
     if (_formKey.currentState!.validate()) {
       if (_eventDate == null || _startTime == null || _endTime == null) {
@@ -98,8 +202,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         return;
       }
 
-      if (_selectedCourse == null || _selectedCourse!.isEmpty) {
-        Fluttertoast.showToast(msg: 'Please select a course');
+      if (_coursesSafe.isEmpty) {
+        Fluttertoast.showToast(msg: 'Please select at least one course');
         return;
       }
 
@@ -112,10 +216,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         'start_time': '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}',
         'end_time': '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
         if (_locationController.text.isNotEmpty) 'location': _locationController.text.trim(),
-        'course': _selectedCourse!,
-        'qr_type': _selectedCourse!, // Set qr_type to the selected course
+        // Support multiple course tags. Keep `course` and `qr_type` for backward
+        // compatibility using the first selected course.
+        'tagged_courses': _coursesSafe,
+        if (_coursesSafe.isNotEmpty) 'course': _coursesSafe.first,
+        if (_coursesSafe.isNotEmpty) 'qr_type': _coursesSafe.first,
         if (_sectionController.text.isNotEmpty) 'section': _sectionController.text.trim(),
-        if (_selectedYearLevel != null && _selectedYearLevel!.isNotEmpty) 'year_level': _selectedYearLevel!,
+        // Support multiple year-level tags. Keep `year_level` for backward compatibility.
+        'tagged_year_levels': _yearLevelsSafe,
+        if (_yearLevelsSafe.isNotEmpty) 'year_level': _yearLevelsSafe.first,
       };
 
       try {
@@ -127,8 +236,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             MaterialPageRoute(builder: (context) => EventsListScreen()),
           );
         }
-      } catch (e) {
-        Fluttertoast.showToast(msg: 'Failed to create event');
+      } catch (e, st) {
+        // Print full error and stacktrace to help debug runtime TypeErrors
+        print('CreateEvent error: $e');
+        print(st);
+        if (e is DioError) {
+          print('Response data: ${e.response?.data}');
+        }
+        Fluttertoast.showToast(msg: 'Failed to create event: ${e.toString()}');
       } finally {
         setState(() => _isLoading = false);
       }
@@ -300,47 +415,88 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ),
                         ),
                         SizedBox(height: AppTheme.spacingMD),
-                        DropdownButtonFormField<String>(
-                          value: _selectedCourse,
-                          decoration: AppTheme.inputDecoration(
-                            label: 'Course *',
-                            prefixIcon: Icons.school,
+                        // Multi-select course picker
+                        InkWell(
+                          onTap: _showCourseMultiSelect,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppTheme.spacingMD,
+                              vertical: AppTheme.spacingMD,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.school, color: AppTheme.primaryColor),
+                                SizedBox(width: AppTheme.spacingSM),
+                                Expanded(
+                                  child: _coursesSafe.isEmpty
+                                      ? Text('Select Courses *', style: AppTheme.bodyMedium)
+                                      : SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            children: _coursesSafe.map((c) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(right: 6.0),
+                                                child: Chip(
+                                                  label: Text(c),
+                                                  backgroundColor: Colors.grey[200],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                ),
+                                Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                              ],
+                            ),
                           ),
-                          items: Courses.courseList.map((course) {
-                            return DropdownMenuItem(
-                              value: course,
-                              child: Text(course, style: AppTheme.bodyMedium),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() => _selectedCourse = value);
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Course is required';
-                            }
-                            return null;
-                          },
                         ),
                         SizedBox(height: AppTheme.spacingMD),
                         Row(
                           children: [
                             Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedYearLevel,
-                                decoration: AppTheme.inputDecoration(
-                                  label: 'Year Level',
-                                  prefixIcon: Icons.calendar_today,
+                              child: InkWell(
+                                onTap: _showYearLevelMultiSelect,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spacingMD,
+                                    vertical: AppTheme.spacingMD,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                                    border: Border.all(color: Colors.grey[300]!),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.calendar_today, color: AppTheme.primaryColor),
+                                      SizedBox(width: AppTheme.spacingSM),
+                                      Expanded(
+                                        child: _yearLevelsSafe.isEmpty
+                                            ? Text('Select Year Levels', style: AppTheme.bodyMedium)
+                                            : SingleChildScrollView(
+                                                scrollDirection: Axis.horizontal,
+                                                child: Row(
+                                                  children: _yearLevelsSafe.map((y) {
+                                                    return Padding(
+                                                      padding: const EdgeInsets.only(right: 6.0),
+                                                      child: Chip(
+                                                        label: Text(y),
+                                                        backgroundColor: Colors.grey[200],
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                      ),
+                                      Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                                    ],
+                                  ),
                                 ),
-                                items: Courses.yearLevels.map((year) {
-                                  return DropdownMenuItem(
-                                    value: year,
-                                    child: Text(year, style: AppTheme.bodyMedium),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() => _selectedYearLevel = value);
-                                },
                               ),
                             ),
                             SizedBox(width: AppTheme.spacingMD),
@@ -356,8 +512,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ],
                         ),
                         SizedBox(height: AppTheme.spacingLG),
-                        // Only show create button if course is selected
-                        if (_selectedCourse != null && _selectedCourse!.isNotEmpty)
+                        // Only show create button if at least one course is selected
+                        if (_selectedCourses.isNotEmpty)
                           Container(
                             decoration: BoxDecoration(
                               gradient: AppTheme.buttonGradient,

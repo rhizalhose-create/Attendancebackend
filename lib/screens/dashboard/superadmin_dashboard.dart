@@ -9,6 +9,7 @@ import '../events/create_event_screen.dart';
 import '../admin/user_management_screen.dart';
 import '../admin/promote_user_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../widgets/logout_confirmation_dialog.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   @override
@@ -68,8 +69,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   IconButton(
                     icon: Icon(Icons.logout, color: Colors.white),
                     onPressed: () async {
-                      await authProvider.logout();
-                      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                      final confirm = await showLogoutConfirmationDialog(context);
+                      if (confirm == true) {
+                        await authProvider.logout();
+                        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                      }
                     },
                   ),
                 ],

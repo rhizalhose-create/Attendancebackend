@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
+// 'dart:convert' not needed here
 import '../../services/api_service.dart';
 import '../../models/event_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/qr_code_generator.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/modern_card.dart';
+import '../../widgets/modern_button.dart';
+import '../../utils/formatters.dart';
 
 class MarkAttendanceScreen extends StatefulWidget {
   final int? eventID;
@@ -105,30 +109,24 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
     // Check if user is admin or superadmin
     if (user == null || (user.role != 'admin' && user.role != 'superadmin')) {
       return Scaffold(
-        appBar: AppBar(title: Text('Mark Attendance')),
+        appBar: AppHeader(title: 'Mark Attendance', showBack: true),
         body: Center(
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppTheme.spacingLG),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.block, size: 64, color: Colors.red),
-                SizedBox(height: 16),
-                Text(
-                  'Access Denied',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8),
+                Icon(Icons.block, size: 64, color: AppTheme.errorColor),
+                SizedBox(height: AppTheme.spacingMD),
+                Text('Access Denied', style: AppTheme.heading2),
+                SizedBox(height: AppTheme.spacingSM),
                 Text(
                   'Only administrators can scan QR codes to mark attendance.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  style: AppTheme.bodyLarge.copyWith(color: AppTheme.textSecondary),
                 ),
-                SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Go Back'),
-                ),
+                SizedBox(height: AppTheme.spacingLG),
+                ModernButton(label: 'Go Back', onPressed: () => Navigator.pop(context), primary: true),
               ],
             ),
           ),
@@ -137,10 +135,8 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
     }
     
     return Scaffold(
-      appBar: AppBar(title: Text('Mark Attendance')),
-      body: _selectedEvent == null && widget.eventID == null
-          ? _buildEventSelection()
-          : _buildScanner(),
+      appBar: AppHeader(title: 'Mark Attendance'),
+      body: _selectedEvent == null && widget.eventID == null ? _buildEventSelection() : _buildScanner(),
     );
   }
 
@@ -163,15 +159,12 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
             itemCount: _events.length,
             itemBuilder: (context, index) {
               final event = _events[index];
-              return Card(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              return ModernCard(
                 child: ListTile(
-                  title: Text(event.title),
-                  subtitle: Text('${event.eventDate.toString().split(' ')[0]} - ${event.status}'),
-                  trailing: Icon(Icons.arrow_forward_ios),
-                  onTap: () {
-                    setState(() => _selectedEvent = event);
-                  },
+                  title: Text(event.title, style: AppTheme.heading4),
+                  subtitle: Text('${formatDate(event.eventDate)} • ${event.status}', style: AppTheme.bodySmall),
+                  trailing: Icon(Icons.arrow_forward_ios, color: AppTheme.textSecondary),
+                  onTap: () => setState(() => _selectedEvent = event),
                 ),
               );
             },
@@ -188,71 +181,49 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
     return Column(
       children: [
         if (_selectedEvent != null)
-          Card(
-            margin: EdgeInsets.all(16),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _selectedEvent!.title,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text('Date: ${_selectedEvent!.eventDate.toString().split(' ')[0]}'),
-                  Text('Time: ${_selectedEvent!.startTime.toString().split(' ')[1].substring(0, 5)} - ${_selectedEvent!.endTime.toString().split(' ')[1].substring(0, 5)}'),
-                  SizedBox(height: 12),
-                  if (!canScan)
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.access_time, color: Colors.orange),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Scanning will be available in $timeRemaining',
-                              style: TextStyle(
-                                color: Colors.orange[800],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.green),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Scanning is now available',
-                              style: TextStyle(
-                                color: Colors.green[800],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+          ModernCard(
+            margin: EdgeInsets.all(AppTheme.spacingMD),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_selectedEvent!.title, style: AppTheme.heading3),
+                SizedBox(height: AppTheme.spacingSM),
+                Text('Date: ${formatDate(_selectedEvent!.eventDate)}', style: AppTheme.bodyMedium),
+                Text('Time: ${formatTime(_selectedEvent!.startTime)} - ${formatTime(_selectedEvent!.endTime)}', style: AppTheme.bodyMedium),
+                SizedBox(height: AppTheme.spacingSM),
+                if (!canScan)
+                  Container(
+                    padding: EdgeInsets.all(AppTheme.spacingSM),
+                    decoration: BoxDecoration(
+                      color: AppTheme.warningColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                      border: Border.all(color: AppTheme.warningColor),
                     ),
-                ],
-              ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.access_time, color: AppTheme.warningColor),
+                        SizedBox(width: AppTheme.spacingSM),
+                        Expanded(child: Text('Scanning will be available in $timeRemaining', style: AppTheme.bodySmall.copyWith(color: AppTheme.warningColor)))
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding: EdgeInsets.all(AppTheme.spacingSM),
+                    decoration: BoxDecoration(
+                      color: AppTheme.successColor.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                      border: Border.all(color: AppTheme.successColor.withOpacity(0.6)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: AppTheme.successColor),
+                        SizedBox(width: AppTheme.spacingSM),
+                        Expanded(child: Text('Scanning is now available', style: AppTheme.bodySmall.copyWith(color: AppTheme.successColor)))
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
         Expanded(

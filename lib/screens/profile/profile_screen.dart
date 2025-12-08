@@ -2,7 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:flutter/services.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/logout_confirmation_dialog.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/modern_card.dart';
+import '../../widgets/modern_button.dart';
+import '../../theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -12,83 +18,77 @@ class ProfileScreen extends StatelessWidget {
 
     if (user == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('Profile')),
+        appBar: AppHeader(title: 'Profile'),
         body: Center(child: Text('No user data available')),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Profile')),
+      appBar: AppHeader(title: 'Profile'),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(AppTheme.spacingMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (user.profilePicture != null && user.profilePicture!.isNotEmpty)
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundImage: MemoryImage(
-                    base64Decode(user.profilePicture!.split(',')[1]),
-                  ),
-                ),
-              )
-            else
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  child: Icon(Icons.person, size: 60),
-                ),
-              ),
-            SizedBox(height: 24),
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoRow('Student ID', user.studentID),
-                    _buildInfoRow('Email', user.email),
-                    _buildInfoRow('Username', user.username),
-                    _buildInfoRow('Name', '${user.firstName} ${user.lastName}'),
-                    if (user.middleName != null)
-                      _buildInfoRow('Middle Name', user.middleName!),
-                    _buildInfoRow('Role', user.role.toUpperCase()),
-                    _buildInfoRow('Verified', user.isVerified ? 'Yes' : 'No'),
-                    if (user.course != null) _buildInfoRow('Course', user.course!),
-                    if (user.yearLevel != null) _buildInfoRow('Year Level', user.yearLevel!),
-                    if (user.section != null) _buildInfoRow('Section', user.section!),
-                    if (user.department != null) _buildInfoRow('Department', user.department!),
-                    if (user.college != null) _buildInfoRow('College', user.college!),
-                    if (user.contactNumber != null)
-                      _buildInfoRow('Contact', user.contactNumber!),
-                    if (user.address != null) _buildInfoRow('Address', user.address!),
-                  ],
-                ),
+            Center(
+              child: user.profilePicture != null && user.profilePicture!.isNotEmpty
+                  ? CircleAvatar(
+                      radius: 64,
+                      backgroundImage: MemoryImage(base64Decode(user.profilePicture!.split(',')[1])),
+                    )
+                  : CircleAvatar(
+                      radius: 64,
+                      child: Icon(Icons.person, size: 64),
+                    ),
+            ),
+            SizedBox(height: AppTheme.spacingLG),
+
+            ModernCard(
+              padding: EdgeInsets.all(AppTheme.spacingLG),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${user.firstName} ${user.lastName}', style: AppTheme.heading4),
+                  SizedBox(height: AppTheme.spacingSM),
+                  Text(user.email, style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
+                  SizedBox(height: AppTheme.spacingMD),
+                  _buildInfoRow(context, 'Student ID', user.studentID),
+                  _buildInfoRow(context, 'Username', user.username),
+                  if (user.middleName != null) _buildInfoRow(context, 'Middle Name', user.middleName!),
+                  _buildInfoRow(context, 'Role', user.role.toUpperCase()),
+                  _buildInfoRow(context, 'Verified', user.isVerified ? 'Yes' : 'No'),
+                  if (user.course != null) _buildInfoRow(context, 'Course', user.course!),
+                  if (user.yearLevel != null) _buildInfoRow(context, 'Year Level', user.yearLevel!),
+                  if (user.section != null) _buildInfoRow(context, 'Section', user.section!),
+                  if (user.department != null) _buildInfoRow(context, 'Department', user.department!),
+                  if (user.college != null) _buildInfoRow(context, 'College', user.college!),
+                  if (user.contactNumber != null) _buildInfoRow(context, 'Contact', user.contactNumber!),
+                  if (user.address != null) _buildInfoRow(context, 'Address', user.address!),
+                ],
               ),
             ),
-            SizedBox(height: 24),
+
+            SizedBox(height: AppTheme.spacingLG),
+
             if (user.qrCodeData != null && user.qrCodeData!.isNotEmpty) ...[
-              Text(
-                'Your QR Code',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              Center(
-                child: _buildQRCodeDisplay(user.qrCodeData!),
-              ),
+              Text('Your QR Code', style: AppTheme.heading5),
+              SizedBox(height: AppTheme.spacingMD),
+              Center(child: _buildQRCodeDisplay(context, user.qrCodeData!)),
             ],
-            SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () async {
-                await authProvider.logout();
-                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-              },
-              icon: Icon(Icons.logout),
-              label: Text('Logout'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                backgroundColor: Colors.red,
+
+            SizedBox(height: AppTheme.spacingLG),
+
+            Center(
+              child: ModernButton(
+                label: 'Logout',
+                icon: Icons.logout,
+                onPressed: () async {
+                  final confirm = await showLogoutConfirmationDialog(context);
+                  if (confirm == true) {
+                    await authProvider.logout();
+                    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                  }
+                },
               ),
             ),
           ],
@@ -97,59 +97,108 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: AppTheme.spacingSM),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 120,
             child: Text(
-              '$label:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              '$label',
+              style: AppTheme.bodySmall.copyWith(fontWeight: FontWeight.w700, color: AppTheme.textSecondary),
             ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    value,
+                    style: AppTheme.bodyMedium,
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacingSM),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: value));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Copied to clipboard')),
+                    );
+                  },
+                  child: Icon(Icons.copy, size: 18, color: AppTheme.textSecondary),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildQRCodeDisplay(String qrCodeData) {
-    // Check if it's base64 image data (from database) or QR code string
+  Widget _buildQRCodeDisplay(BuildContext context, String qrCodeData) {
+    // Display the QR inside a card with actions (copy)
+    Widget qrWidget;
     if (qrCodeData.startsWith('data:image')) {
-      // It's a base64 image from database - decode and display
       try {
         final base64String = qrCodeData.split(',')[1];
         final imageBytes = base64Decode(base64String);
-        return Image.memory(
+        qrWidget = Image.memory(
           imageBytes,
-          width: 200,
-          height: 200,
+          width: 220,
+          height: 220,
           fit: BoxFit.contain,
         );
       } catch (e) {
-        // If decoding fails, fallback to generating QR code from the string
-        return QrImageView(
+        qrWidget = QrImageView(
           data: qrCodeData,
           version: QrVersions.auto,
-          size: 200.0,
+          size: 220.0,
           backgroundColor: Colors.white,
           errorCorrectionLevel: QrErrorCorrectLevel.M,
         );
       }
     } else {
-      // It's a QR code data string (e.g., "student:STUDENTID" or "event:123:student:STUDENTID")
-      // Use QrImageView to generate QR code from the string
-      return QrImageView(
+      qrWidget = QrImageView(
         data: qrCodeData,
         version: QrVersions.auto,
-        size: 200.0,
+        size: 220.0,
         backgroundColor: Colors.white,
         errorCorrectionLevel: QrErrorCorrectLevel.M,
       );
     }
+
+    return ModernCard(
+      padding: EdgeInsets.all(AppTheme.spacingMD),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          qrWidget,
+          SizedBox(height: AppTheme.spacingSM),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ModernButton(
+                label: 'Copy Data',
+                outline: true,
+                primary: false,
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: qrCodeData));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('QR data copied')));
+                },
+              ),
+              SizedBox(width: AppTheme.spacingMD),
+              ModernButton(
+                label: 'Close',
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

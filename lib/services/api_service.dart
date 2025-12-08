@@ -48,11 +48,13 @@ class ApiService {
     return await _dio.post('/register', data: data);
   }
 
-  Future<Response> login(String studentID, String password) async {
-    return await _dio.post('/login', data: {
+  Future<Response> login(String studentID, String password, {String? recaptchaToken}) async {
+    final data = {
       'student_id': studentID,
       'password': password,
-    });
+      if (recaptchaToken != null) 'recaptcha_token': recaptchaToken,
+    };
+    return await _dio.post('/login', data: data);
   }
 
   Future<Response> loginByEmail(String email, String password) async {
@@ -60,6 +62,15 @@ class ApiService {
       'email': email,
       'password': password,
     });
+  }
+
+  Future<Response> loginByEmailWithToken(String email, String password, {String? recaptchaToken}) async {
+    final data = {
+      'email': email,
+      'password': password,
+      if (recaptchaToken != null) 'recaptcha_token': recaptchaToken,
+    };
+    return await _dio.post('/login/email', data: data);
   }
 
   Future<Response> verifyEmail(String email, String code) async {
@@ -71,6 +82,14 @@ class ApiService {
 
   Future<Response> forgotPassword(String email) async {
     return await _dio.post('/forgot-password', data: {'email': email});
+  }
+
+  Future<Response> forgotPasswordWithToken(String email, {String? recaptchaToken}) async {
+    final data = {
+      'email': email,
+      if (recaptchaToken != null) 'recaptcha_token': recaptchaToken,
+    };
+    return await _dio.post('/forgot-password', data: data);
   }
 
   Future<Response> resetPassword(String email, String code, String newPassword) async {

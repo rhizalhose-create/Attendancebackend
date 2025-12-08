@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../models/event_model.dart';
 import '../../services/api_service.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/modern_card.dart';
+import '../../utils/formatters.dart';
+import '../../theme/app_theme.dart';
 
 class EventAttendanceScreen extends StatefulWidget {
   final int eventID;
@@ -56,53 +60,37 @@ class _EventAttendanceScreenState extends State<EventAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Event Attendance'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _loadAttendance,
-          ),
-        ],
-      ),
+      appBar: AppHeader(title: 'Event Attendance'),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _attendances.isEmpty
-              ? Center(child: Text('No attendance records found'))
+              ? Center(child: Text('No attendance records found', style: AppTheme.bodyLarge))
               : Column(
                   children: [
                     Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text(
-                        'Total: ${_attendances.length}',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                      padding: EdgeInsets.all(AppTheme.spacingMD),
+                      child: Text('Total: ${_attendances.length}', style: AppTheme.heading4),
                     ),
                     Expanded(
                       child: ListView.builder(
                         itemCount: _attendances.length,
                         itemBuilder: (context, index) {
                           final attendance = _attendances[index];
-                          return Card(
-                            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          return ModernCard(
                             child: ListTile(
-                              title: Text(
-                                '${attendance.student?.firstName ?? ''} ${attendance.student?.lastName ?? ''}',
-                              ),
+                              title: Text('${attendance.student?.firstName ?? ''} ${attendance.student?.lastName ?? ''}', style: AppTheme.heading5),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Student ID: ${attendance.studentID}'),
-                                  Text('Status: ${attendance.status}'),
-                                  Text('Marked at: ${attendance.markedAt.toString().split('.')[0]}'),
-                                  if (attendance.checkInTime != null)
-                                    Text('Check-in: ${attendance.checkInTime!.toString().split('.')[0]}'),
-                                  if (attendance.checkOutTime != null)
-                                    Text('Check-out: ${attendance.checkOutTime!.toString().split('.')[0]}'),
+                                  Text('Student ID: ${attendance.studentID}', style: AppTheme.bodySmall),
+                                  Text('Status: ${attendance.status}', style: AppTheme.bodySmall),
+                                  Text('Marked at: ${formatDateTime(attendance.markedAt)}', style: AppTheme.bodySmall),
+                                  if (attendance.checkInTime != null) Text('Check-in: ${formatDateTime(attendance.checkInTime)}', style: AppTheme.bodySmall),
+                                  if (attendance.checkOutTime != null) Text('Check-out: ${formatDateTime(attendance.checkOutTime)}', style: AppTheme.bodySmall),
                                 ],
                               ),
                               trailing: PopupMenuButton(
-                                onSelected: (value) => _updateStatus(attendance.id, value),
+                                onSelected: (value) => _updateStatus(attendance.id, value as String),
                                 itemBuilder: (context) => [
                                   PopupMenuItem(value: 'present', child: Text('Present')),
                                   PopupMenuItem(value: 'absent', child: Text('Absent')),

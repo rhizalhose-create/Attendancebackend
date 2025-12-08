@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../providers/auth_provider.dart';
@@ -8,6 +9,7 @@ import 'forgot_password_screen.dart';
 import '../dashboard/student_dashboard.dart';
 import '../dashboard/admin_dashboard.dart';
 import '../dashboard/superadmin_dashboard.dart';
+import '../../utils/recaptcha.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -30,10 +32,53 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+      // Show a blocking dialog while obtaining reCAPTCHA token so the
+      // user sees the verification step and cannot proceed until it finishes.
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            content: Row(
+              children: [
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 16),
+                Expanded(child: Text('Verifying reCAPTCHA...')),
+              ],
+            ),
+          );
+        },
+      );
+
+      String? token;
+      try {
+        token = await getRecaptchaToken(context, 'login');
+      } catch (e) {
+        token = null;
+      }
+
+      // Dismiss the dialog before proceeding.
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+
+      if (kDebugMode) debugPrint('reCAPTCHA token: $token');
+
+      if (token == null) {
+        Fluttertoast.showToast(
+          msg: 'reCAPTCHA verification failed. Please try again.',
+          toastLength: Toast.LENGTH_LONG,
+          backgroundColor: Colors.red,
+        );
+        return;
+      }
+
       final success = await authProvider.login(
         _studentIDController.text.trim(),
         _passwordController.text,
+        recaptchaToken: token,
       );
 
       if (success && authProvider.user != null) {

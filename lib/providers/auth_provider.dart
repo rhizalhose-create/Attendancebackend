@@ -15,13 +15,13 @@ class AuthProvider with ChangeNotifier {
   String? get error => _error;
   bool get isAuthenticated => _user != null;
 
-  Future<bool> login(String studentID, String password) async {
+  Future<bool> login(String studentID, String password, {String? recaptchaToken}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _apiService.login(studentID, password);
+      final response = await _apiService.login(studentID, password, recaptchaToken: recaptchaToken);
       
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
@@ -220,13 +220,13 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> loginByEmail(String email, String password) async {
+  Future<bool> loginByEmail(String email, String password, {String? recaptchaToken}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final response = await _apiService.loginByEmail(email, password);
+      final response = await _apiService.loginByEmailWithToken(email, password, recaptchaToken: recaptchaToken);
       
       if (response.statusCode == 200) {
         // For email login, we need to fetch user details first

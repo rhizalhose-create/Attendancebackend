@@ -7,6 +7,7 @@ import '../../utils/qr_code_generator.dart';
 import '../events/events_list_screen.dart';
 import '../attendance/my_attendance_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../widgets/logout_confirmation_dialog.dart';
 
 class StudentDashboard extends StatefulWidget {
   @override
@@ -66,8 +67,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   IconButton(
                     icon: Icon(Icons.logout, color: Colors.white),
                     onPressed: () async {
-                      await authProvider.logout();
-                      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                      final confirm = await showLogoutConfirmationDialog(context);
+                      if (confirm == true) {
+                        await authProvider.logout();
+                        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                      }
                     },
                   ),
                 ],

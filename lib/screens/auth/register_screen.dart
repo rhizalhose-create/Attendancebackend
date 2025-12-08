@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/recaptcha.dart';
 import '../../utils/courses.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/password_utils.dart';
+import '../../widgets/password_strength_indicator.dart';
 import 'verify_email_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -30,6 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isConfirmPasswordVisible = false;
   String? _selectedCourse;
   String? _selectedYearLevel;
+  PasswordStrength _passwordStrength = PasswordStrength.veryWeak;
 
   @override
   void dispose() {
@@ -76,6 +80,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (_departmentController.text.isNotEmpty) 'department': _departmentController.text.trim(),
         if (_sectionController.text.isNotEmpty) 'section': _sectionController.text.trim(),
       };
+
+      // Show blocking dialog while obtaining reCAPTCHA token
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Row(
+            children: [
+              SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+              SizedBox(width: 12),
+              Expanded(child: Text('Verifying reCAPTCHA...')),
+            ],
+          ),
+        ),
+      );
+
+      String? token;
+      try {
+        token = await getRecaptchaToken(context, 'register');
+      } catch (e) {
+        token = null;
+      }
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+
+      if (token == null) {
+        Fluttertoast.showToast(msg: 'reCAPTCHA verification failed. Please try again.', backgroundColor: Colors.red);
+        return;
+      }
+
+      // Attach token to payload
+      data['recaptcha_token'] = token;
 
       final success = await authProvider.register(data);
 
@@ -391,6 +426,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
+                        onChanged: (v) {
+                          setState(() {
+                            _passwordStrength = PasswordUtils.estimate(v);
+                          });
+                        },
                         decoration: InputDecoration(
                           labelText: 'Password:',
                           prefixIcon: Icon(Icons.lock),
@@ -418,6 +458,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           return null;
                         },
                       ),
+                      SizedBox(height: 8),
+                      PasswordStrengthIndicator(strength: _passwordStrength),
                       SizedBox(height: 12),
                       TextFormField(
                         controller: _confirmPasswordController,

@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://www.google.com/recaptcha/api.js?render=6Lc47yQsAAAAAEco52pAL5B032ZK2vrPn2BYx-ZN"></script>
+  <script>
+    function run(action){
+      if (!window.grecaptcha) {
+        // wait briefly then try again
+        setTimeout(function(){ run(action); }, 500);
+        return;
+      }
+      grecaptcha.ready(function(){
+        try {
+          grecaptcha.execute('6Lc47yQsAAAAAEco52pAL5B032ZK2vrPn2BYx-ZN', {action: action})
+            .then(function(token){
+              // Try the Flutter JS handler
+              if (window.RecaptchaToken && window.RecaptchaToken.postMessage) {
+                try { window.RecaptchaToken.postMessage(token); } catch(e){}
+              }
+              // Fallback for webview_flutter channel
+              try { window.ReCaptcha && window.ReCaptcha.postMessage && window.ReCaptcha.postMessage(token); } catch(e){}
+              // Generic fallback: set document title so Flutter can read it
+              document.title = 'rc|' + token;
+            }).catch(function(e){ document.title = 'rc|'; });
+        } catch(e) { document.title = 'rc|'; }
+      });
+    }
+    window.onload = function(){
+      var action = (new URL(location.href)).searchParams.get('action') || 'login';
+      run(action);
+    };
+  </script>
+</head>
+<body>
+  <p>Running reCAPTCHA...</p>
+</body>
+</html>

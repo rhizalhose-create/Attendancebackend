@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../models/event_model.dart';
 import '../../services/api_service.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/modern_card.dart';
+import '../../utils/formatters.dart';
+import '../../theme/app_theme.dart';
 
 class MyAttendanceScreen extends StatefulWidget {
   @override
@@ -40,38 +44,27 @@ class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('My Attendance'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _loadAttendance,
-          ),
-        ],
-      ),
+      appBar: AppHeader(title: 'My Attendance'),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _attendances.isEmpty
-              ? Center(child: Text('No attendance records found'))
+              ? Center(child: Text('No attendance records found', style: AppTheme.bodyLarge))
               : RefreshIndicator(
                   onRefresh: _loadAttendance,
                   child: ListView.builder(
                     itemCount: _attendances.length,
                     itemBuilder: (context, index) {
                       final attendance = _attendances[index];
-                      return Card(
-                        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      return ModernCard(
                         child: ListTile(
-                          title: Text(attendance.event?.title ?? 'Event ${attendance.eventID}'),
+                          title: Text(attendance.event?.title ?? 'Event ${attendance.eventID}', style: AppTheme.heading4),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Status: ${attendance.status}'),
-                              Text('Date: ${attendance.markedAt.toString().split('.')[0]}'),
-                              if (attendance.checkInTime != null)
-                                Text('Check-in: ${attendance.checkInTime!.toString().split('.')[0]}'),
-                              if (attendance.checkOutTime != null)
-                                Text('Check-out: ${attendance.checkOutTime!.toString().split('.')[0]}'),
+                              Text('Status: ${attendance.status}', style: AppTheme.bodySmall),
+                              Text('Date: ${formatDateTime(attendance.markedAt)}', style: AppTheme.bodySmall),
+                              if (attendance.checkInTime != null) Text('Check-in: ${formatDateTime(attendance.checkInTime)}', style: AppTheme.bodySmall),
+                              if (attendance.checkOutTime != null) Text('Check-out: ${formatDateTime(attendance.checkOutTime)}', style: AppTheme.bodySmall),
                             ],
                           ),
                           trailing: _getStatusIcon(attendance.status),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../services/api_service.dart';
+import '../../utils/password_utils.dart';
+import '../../widgets/password_strength_indicator.dart';
 import '../auth/login_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final ApiService _apiService = ApiService();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  PasswordStrength _passwordStrength = PasswordStrength.veryWeak;
 
   @override
   void dispose() {
@@ -114,6 +117,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
+                    onChanged: (v) => setState(() => _passwordStrength = PasswordUtils.estimate(v)),
                     decoration: InputDecoration(
                       labelText: 'New Password',
                       prefixIcon: Icon(Icons.lock),
@@ -138,6 +142,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       return null;
                     },
                   ),
+                  SizedBox(height: 8),
+                  PasswordStrengthIndicator(strength: _passwordStrength),
                   SizedBox(height: 16),
                   TextFormField(
                     controller: _confirmPasswordController,
