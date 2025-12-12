@@ -1,39 +1,163 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://www.google.com/recaptcha/api.js?render=6Lc47yQsAAAAAEco52pAL5B032ZK2vrPn2BYx-ZN"></script>
-  <script>
-    function run(action){
-      if (!window.grecaptcha) {
-        // wait briefly then try again
-        setTimeout(function(){ run(action); }, 500);
-        return;
-      }
-      grecaptcha.ready(function(){
-        try {
-          grecaptcha.execute('6Lc47yQsAAAAAEco52pAL5B032ZK2vrPn2BYx-ZN', {action: action})
-            .then(function(token){
-              // Try the Flutter JS handler
-              if (window.RecaptchaToken && window.RecaptchaToken.postMessage) {
-                try { window.RecaptchaToken.postMessage(token); } catch(e){}
-              }
-              // Fallback for webview_flutter channel
-              try { window.ReCaptcha && window.ReCaptcha.postMessage && window.ReCaptcha.postMessage(token); } catch(e){}
-              // Generic fallback: set document title so Flutter can read it
-              document.title = 'rc|' + token;
-            }).catch(function(e){ document.title = 'rc|'; });
-        } catch(e) { document.title = 'rc|'; }
-      });
+  <title>reCAPTCHA v2</title>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f5f5f5;
+      padding: 12px;
     }
-    window.onload = function(){
-      var action = (new URL(location.href)).searchParams.get('action') || 'login';
-      run(action);
+    .container {
+      background: white;
+      padding: 18px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+      border: 2px solid #007bff; /* Add visible border */
+    }
+    h1 { 
+      font-size: 16px; 
+      margin: 0 0 12px 0; 
+      color: #333;
+    }
+    #recaptcha-container {
+      min-height: 78px;
+      border: 1px solid #ccc;
+      padding: 8px;
+      margin: 10px 0;
+      background: #fafafa;
+    }
+    .status {
+      font-size: 12px;
+      color: #666;
+      margin: 8px 0;
+    }
+    .error-msg { 
+      color: #d32f2f; 
+      font-size: 14px; 
+      margin-top: 12px; 
+      display: none;
+    }
+
+    .debug-info {
+      font-size: 10px;
+      color: #999;
+      margin-top: 8px;
+      text-align: left;
+      background: #f8f8f8;
+      padding: 4px;
+      border-radius: 4px;
+    }
+  </style>
+  <script>
+    const RECAPTCHA_SITE_KEY = '6LdeZScsAAAAAFIrdoLiGeTn9poPR1XU4LKes07k';
+    let recaptchaToken = null;
+    let recaptchaError = null;
+    let widgetId = null;
+    
+    // Callback when user completes the checkbox
+    function onRecaptchaCallback(token) {
+      console.log('[recaptcha-mobile] v2 callback received token');
+      recaptchaToken = token;
+      recaptchaError = null;
+      document.getElementById('status').textContent = '✓ reCAPTCHA completed successfully!';
+      document.getElementById('status').style.color = '#28a745';
+      document.getElementById('debug-status').textContent = 'Token received (' + (token ? token.length : 0) + ' chars)';
+      // Notify Flutter via document.title (fallback for WebView)
+      document.title = 'rc|' + token;
+      // Try Flutter channel if available
+      if (globalThis.RecaptchaToken && globalThis.RecaptchaToken.postMessage) {
+        try {
+          globalThis.RecaptchaToken.postMessage(token);
+        } catch(e) {
+          console.error('[recaptcha-mobile] channel error:', e);
+        }
+      }
+    }
+
+    function renderRecaptcha() {
+      console.log('[recaptcha-mobile] Attempting to render reCAPTCHA...');
+      document.getElementById('status').textContent = 'Loading reCAPTCHA...';
+      document.getElementById('debug-status').textContent = 'Attempting to render widget...';
+      
+      if (typeof grecaptcha !== 'undefined') {
+        try {
+          // Explicitly render into the container to improve visibility in WebView
+          widgetId = grecaptcha.render('recaptcha-container', {
+            'sitekey': RECAPTCHA_SITE_KEY,
+            'callback': onRecaptchaCallback,
+            'error-callback': onRecaptchaError,
+            'size': 'normal'
+          });
+          console.log('[recaptcha-mobile] grecaptcha rendered successfully, widgetId=', widgetId);
+          document.getElementById('status').textContent = 'reCAPTCHA loaded. Please check the checkbox below.';
+          document.getElementById('debug-status').textContent = 'Widget rendered (ID: ' + widgetId + ')';
+          document.getElementById('error-msg').style.display = 'none';
+        } catch (e) {
+          console.error('[recaptcha-mobile] render error', e);
+          document.getElementById('status').textContent = 'Error loading reCAPTCHA';
+          document.getElementById('debug-status').textContent = 'Render failed: ' + e.message;
+          onRecaptchaError();
+        }
+      } else {
+        console.log('[recaptcha-mobile] grecaptcha not ready, retrying...');
+        document.getElementById('status').textContent = 'Waiting for reCAPTCHA to load...';
+        document.getElementById('debug-status').textContent = 'grecaptcha not available, retrying...';
+        // Retry a few times if grecaptcha not ready
+        setTimeout(renderRecaptcha, 500);
+      }
+    }
+
+
+    function onRecaptchaError() {
+      console.error('[recaptcha-mobile] reCAPTCHA failed to load');
+      recaptchaError = 'reCAPTCHA could not load. Please check your domain settings.';
+      document.getElementById('status').textContent = '❌ reCAPTCHA failed to load';
+      document.getElementById('status').style.color = '#dc3545';
+      document.getElementById('error-msg').style.display = 'block';
+
+      recaptchaToken = 'error_token_' + Date.now();
+      document.title = 'rc|' + recaptchaToken;
+    }
+    
+    window.onload = function() {
+      console.log('[recaptcha-mobile] page loaded, waiting for user to complete checkbox');
+      document.getElementById('load-time').textContent = new Date().toLocaleTimeString();
+      document.getElementById('debug-status').textContent = 'Page loaded, initializing reCAPTCHA...';
+      // Try to explicitly render the widget so it is visible in the WebView
+      renderRecaptcha();
     };
   </script>
 </head>
 <body>
-  <p>Running reCAPTCHA...</p>
+  <div class="container">
+    <h1>Verify that you're human</h1>
+    <div id="status" class="status">Initializing reCAPTCHA...</div>
+    <div id="recaptcha-container">
+      <!-- reCAPTCHA widget will be rendered here -->
+      <div style="padding: 20px; text-align: center; color: #666;">
+        Loading reCAPTCHA widget...
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <button onclick="renderRecaptcha()" style="padding:8px 12px;border-radius:6px;border:1px solid #ddd;background:#fff;">Reload reCAPTCHA</button>
+    </div>
+    <div id="debug-info" class="debug-info">
+      Debug: Page loaded at <span id="load-time"></span><br>
+      Status: <span id="debug-status">Initializing...</span>
+    </div>
+    <div id="error-msg" class="error-msg">reCAPTCHA is unavailable. Please try again.</div>
+  </div>
 </body>
 </html>

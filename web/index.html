@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -20,7 +20,7 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
 
-  <!-- iOS meta tags & icons -->
+
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="xcoders">
@@ -31,47 +31,100 @@
 
   <title>xcoders</title>
   <link rel="manifest" href="manifest.json">
-  <!--
-    Add your reCAPTCHA v3 site key below. This exposes a global helper
-    function `executeRecaptcha(action)` which returns a Promise resolving
-    to the token. Replace YOUR_SITE_KEY with your site key.
-  -->
-    <script src="https://www.google.com/recaptcha/api.js?render=6Lc47yQsAAAAAEco52pAL5B032ZK2vrPn2BYx-ZN"></script>
-  <script>
-    // Robust helper: waits for grecaptcha to be ready before executing.
-    // Site key used by this page:
-    const RECAPTCHA_SITE_KEY = '6Lc47yQsAAAAAEco52pAL5B032ZK2vrPn2BYx-ZN';
-    console.log('[recaptcha] site key (in page):', RECAPTCHA_SITE_KEY);
-    // Log which recaptcha script is present on the page (if any)
-    const recScript = document.querySelector('script[src*="recaptcha"]');
-    console.log('[recaptcha] recaptcha script element:', recScript ? recScript.src : 'none');
+  <style>
 
-    // Replace YOUR_SITE_KEY with your actual site key.
-    globalThis.executeRecaptcha = function(action) {
-      console.log('[recaptcha] executeRecaptcha called, action=', action, 'grecaptcha present=', !!globalThis.grecaptcha);
-      return new Promise(function(resolve, reject) {
-        try {
-          if (!globalThis.grecaptcha) {
-            // grecaptcha script not loaded
-            resolve(null);
-            return;
-          }
-          globalThis.grecaptcha.ready(function() {
-            try {
-                console.log('[recaptcha] calling grecaptcha.execute with site key:', RECAPTCHA_SITE_KEY);
-                globalThis.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: action })
-                  .then(function(token) { console.log('[recaptcha] grecaptcha returned token?', !!token); resolve(token); })
-                  .catch(function(err) { console.error('[recaptcha] grecaptcha.execute error', err); reject(err); });
-            } catch (e) {
-              reject(e);
-            }
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
+    .grecaptcha-badge {
+      visibility: visible !important;
+      opacity: 1 !important;
+      z-index: 999999 !important;
+    }
+    .g-recaptcha { display: inline-block !important; transform-origin: center; }
+
+ 
+    #recaptcha-container {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* Inner box */
+    .recaptcha-box {
+      background: #fff;
+      padding: 26px 26px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(30, 40, 60, 0.12);
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Smaller widget on narrow screens */
+    @media (max-width: 480px) {
+      .recaptcha-box { max-width: 340px; padding: 16px; }
+      .g-recaptcha { transform: scale(0.85); }
+    }
+    @media (max-width: 360px) {
+      .recaptcha-box { max-width: 300px; padding: 12px; }
+      .g-recaptcha { transform: scale(0.75); }
+    }
+  </style>
+
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script>
+  
+    const RECAPTCHA_SITE_KEY = '6LdeZScsAAAAAFIrdoLiGeTn9poPR1XU4LKes07k';
+    console.log('[recaptcha] v2 site key:', RECAPTCHA_SITE_KEY);
+    
+
+    let recaptchaToken = null;
+    
+
+    globalThis.onRecaptchaCallback = function(token) {
+      console.log('[recaptcha] v2 callback received token');
+      recaptchaToken = token;
+    };
+    
+
+    globalThis.getRecaptchaToken = function() {
+      return recaptchaToken;
+    };
+    
+
+    globalThis.resetRecaptchaToken = function() {
+      recaptchaToken = null;
+      if (globalThis.grecaptcha) {
+        globalThis.grecaptcha.reset();
+      }
+    };
+    
+
+    globalThis.showRecaptchaCheckbox = function() {
+      const container = document.getElementById('recaptcha-container');
+      if (container) {
+        container.style.display = 'flex';
+      }
+    };
+    
+ 
+    globalThis.hideRecaptchaCheckbox = function() {
+      const container = document.getElementById('recaptcha-container');
+      if (container) {
+        container.style.display = 'none';
+      }
     };
   </script>
+ 
+  <div id="recaptcha-container" aria-hidden="true">
+    <div class="recaptcha-box">
+      <p style="margin: 0 0 12px 0; font-size: 15px; color: #333; font-weight: 500;">Please verify that you're human</p>
+      <div class="g-recaptcha" data-sitekey="6LdeZScsAAAAAFIrdoLiGeTn9poPR1XU4LKes07k" data-callback="onRecaptchaCallback"></div>
+    </div>
+  </div>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

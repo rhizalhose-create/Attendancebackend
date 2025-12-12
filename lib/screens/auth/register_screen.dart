@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../providers/auth_provider.dart';
-import '../../utils/recaptcha.dart';
+// import '../../utils/recaptcha.dart';
 import '../../utils/courses.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/password_utils.dart';
@@ -82,6 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       };
 
       // Show blocking dialog while obtaining reCAPTCHA token
+      /*
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -111,6 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       // Attach token to payload
       data['recaptcha_token'] = token;
+      */
 
       final success = await authProvider.register(data);
 

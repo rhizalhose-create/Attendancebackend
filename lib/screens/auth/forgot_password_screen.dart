@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../services/api_service.dart';
-import '../../utils/recaptcha.dart';
+// import '../../utils/recaptcha.dart';
 import 'reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -27,6 +27,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       try {
         // Show blocking dialog while obtaining reCAPTCHA token
+        /*
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -54,8 +55,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           setState(() => _isLoading = false);
           return;
         }
+        */
 
-        final response = await _apiService.forgotPasswordWithToken(_emailController.text.trim(), recaptchaToken: token);
+        final response = await _apiService.forgotPasswordWithToken(_emailController.text.trim()); // , recaptchaToken: token);
 
         if (response.statusCode == 200) {
           Fluttertoast.showToast(

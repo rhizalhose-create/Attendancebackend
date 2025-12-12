@@ -24,10 +24,10 @@
 In your Go backend `main.go` or server file, make sure it's configured like this:
 
 ```go
-// ✅ CORRECT - This allows connections from network
+
 app.Listen("0.0.0.0:3000")
 
-// ❌ WRONG - This only allows localhost connections
+
 app.Listen("localhost:3000")
 // or
 app.Listen("127.0.0.1:3000")

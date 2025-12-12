@@ -9,7 +9,7 @@ import 'forgot_password_screen.dart';
 import '../dashboard/student_dashboard.dart';
 import '../dashboard/admin_dashboard.dart';
 import '../dashboard/superadmin_dashboard.dart';
-import '../../utils/recaptcha.dart';
+// import '../../utils/recaptcha.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -32,8 +32,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      // Show a blocking dialog while obtaining reCAPTCHA token so the
-      // user sees the verification step and cannot proceed until it finishes.
+
+      // Show reCAPTCHA verification
+      /*
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -54,19 +55,19 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       );
 
-      String? token;
+      String? recaptchaToken;
       try {
-        token = await getRecaptchaToken(context, 'login');
+        recaptchaToken = await getRecaptchaToken(context, 'login');
       } catch (e) {
-        token = null;
+        recaptchaToken = null;
       }
 
       // Dismiss the dialog before proceeding.
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
 
-      if (kDebugMode) debugPrint('reCAPTCHA token: $token');
+      if (kDebugMode) debugPrint('reCAPTCHA token: $recaptchaToken');
 
-      if (token == null) {
+      if (recaptchaToken == null) {
         Fluttertoast.showToast(
           msg: 'reCAPTCHA verification failed. Please try again.',
           toastLength: Toast.LENGTH_LONG,
@@ -75,10 +76,13 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
+      print('[login] reCAPTCHA passed: $recaptchaToken');
+      */
+
       final success = await authProvider.login(
         _studentIDController.text.trim(),
         _passwordController.text,
-        recaptchaToken: token,
+        // recaptchaToken: recaptchaToken,
       );
 
       if (success && authProvider.user != null) {
