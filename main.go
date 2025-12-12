@@ -3,6 +3,7 @@ package main
 import (
 	"attendance-system/API"
 	"attendance-system/connection"
+	"attendance-system/logging"
 	"attendance-system/middleware"
 	"attendance-system/seeder"
 	"attendance-system/services"
@@ -13,10 +14,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 func main() {
 	godotenv.Load()
+
+	// Initialize modern logging system
+	if err := logging.InitLogger(); err != nil {
+		fmt.Printf("Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer logging.Logger.Sync() // Flush logs on exit
+
+	logging.Logger.Info("Starting Attendance System Backend")
+
 	connection.Connect()
 	seeder.SeedSuperAdmin()
 
@@ -46,6 +58,9 @@ func main() {
 
 	// Rate limiting
 	app.Use(middleware.RateLimit)
+
+	// Request logging with IP
+	app.Use(middleware.RequestLogger())
 
 	// CORS Configuration - Security: Restrict origins in production
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
@@ -86,25 +101,6 @@ func main() {
 		})
 	})
 
-	// Debug: verify recaptcha token (POST JSON { "token": "...", "action": "login" })
-	app.Post("/debug/recaptcha", func(c *fiber.Ctx) error {
-		req := struct {
-			Token  string `json:"token"`
-			Action string `json:"action"`
-		}{}
-		if err := c.BodyParser(&req); err != nil {
-			return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
-		}
-		ok, err := services.VerifyRecaptcha(req.Token, c.IP(), req.Action)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"ok": ok, "error": err.Error()})
-		}
-		if !ok {
-			return c.Status(400).JSON(fiber.Map{"ok": false, "message": "verification failed"})
-		}
-		return c.JSON(fiber.Map{"ok": true, "message": "verification passed"})
-	})
-
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "healthy",
@@ -116,24 +112,30 @@ func main() {
 	API.EventRoutes(app)
 	API.AttendanceRoutes(app)
 
-	// Print server info
+	// Log server info
 	port := os.Getenv("APP_PORT")
 	if port == "" {
 		port = "3000"
 	}
 
-	fmt.Printf(" Server starting on port %s...\n", port)
-	fmt.Printf(" Test endpoints:\n")
-	fmt.Printf("   http://localhost:%s/test\n", port)
-	fmt.Printf("   http://localhost:%s/health\n", port)
-	fmt.Printf("   http://localhost:%s/login (POST)\n", port)
-	fmt.Printf("   http://localhost:%s/register (POST)\n", port)
-	fmt.Printf("\n Admin endpoints (requires Bearer SUPERADMIN token):\n")
-	fmt.Printf("   GET  http://localhost:%s/admin/users\n", port)
-	fmt.Printf("   POST http://localhost:%s/admin/promote\n", port)
-	fmt.Printf("\n Default SuperAdmin:\n")
-	fmt.Printf("   StudentID: SUPERADMIN\n")
-	fmt.Printf("   Password: superadmin123\n")
+	logging.Logger.Info("Server starting",
+		zap.String("port", port),
+		zap.String("host", "0.0.0.0"),
+	)
+	logging.Logger.Info("Test endpoints available",
+		zap.String("test", fmt.Sprintf("http://localhost:%s/test", port)),
+		zap.String("health", fmt.Sprintf("http://localhost:%s/health", port)),
+		zap.String("login", fmt.Sprintf("http://localhost:%s/login (POST)", port)),
+		zap.String("register", fmt.Sprintf("http://localhost:%s/register (POST)", port)),
+	)
+	logging.Logger.Info("Admin endpoints (require Bearer SUPERADMIN token)",
+		zap.String("users", fmt.Sprintf("GET http://localhost:%s/admin/users", port)),
+		zap.String("promote", fmt.Sprintf("POST http://localhost:%s/admin/promote", port)),
+	)
+	logging.Logger.Info("Default SuperAdmin credentials",
+		zap.String("student_id", "SUPERADMIN"),
+		zap.String("password", "superadmin123"),
+	)
 
 	app.Listen(":" + port)
 }

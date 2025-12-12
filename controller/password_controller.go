@@ -29,17 +29,6 @@ func ForgotPassword(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": ErrInvalidRequest})
 	}
 
-	// Verify reCAPTCHA token if configured
-	if ok, err := services.VerifyRecaptcha(req.RecaptchaToken, c.IP(), "forgot_password"); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
-	} else if !ok {
-		return c.Status(400).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
-	}
-
-	if req.Email == "" {
-		return c.Status(400).JSON(fiber.Map{"error": ErrEmailRequired})
-	}
-
 	// Always return success (security)
 	_, err := services.ForgotPassword(req.Email)
 	if err != nil {

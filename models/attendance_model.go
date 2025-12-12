@@ -42,14 +42,15 @@ type Attendance struct {
 
 // AttendanceRequest for marking attendance
 type AttendanceRequest struct {
-	EventID   uint    `json:"event_id"`
-	StudentID string  `json:"student_id,omitempty"` // Optional if from JWT
-	Status    string  `json:"status,omitempty"`     // Optional, defaults to "present"
-	Method    string  `json:"method,omitempty"`     // Optional, defaults to "qr_scan"
-	Action    string  `json:"action"`               // "check_in" or "check_out"
-	Latitude  float64 `json:"latitude,omitempty"`
-	Longitude float64 `json:"longitude,omitempty"`
-	Notes     string  `json:"notes,omitempty"`
+	EventID        uint    `json:"event_id"`
+	StudentID      string  `json:"student_id,omitempty"` // Optional if from JWT
+	Status         string  `json:"status,omitempty"`     // Optional, defaults to "present"
+	Method         string  `json:"method,omitempty"`     // Optional, defaults to "qr_scan"
+	Action         string  `json:"action"`               // "check_in" or "check_out"
+	Latitude       float64 `json:"latitude,omitempty"`
+	Longitude      float64 `json:"longitude,omitempty"`
+	Notes          string  `json:"notes,omitempty"`
+	RecaptchaToken string  `json:"recaptcha_token,omitempty"`
 }
 
 // AttendanceStats for reporting

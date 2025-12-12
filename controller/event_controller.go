@@ -12,17 +12,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// CreateEvent creates a new event
-func CreateEvent(c *fiber.Ctx) error {
-	req := new(models.EventRequest)
-	if err := c.BodyParser(req); err != nil {
-		// Try to be permissive: if BodyParser fails (client may have sent form-data),
-		// continue and attempt to read form fields where possible. We'll only fail
-		// later if required fields are missing.
-		// Note: keep original behavior for strict JSON clients.
-	}
-
-	// Fallback: support `tagged_courses` as a CSV form value when clients send form-data
+// parseTaggedCourses parses tagged courses from form value if not provided in JSON
+func parseTaggedCourses(req *models.EventRequest, c *fiber.Ctx) {
 	if len(req.TaggedCourses) == 0 {
 		if raw := c.FormValue("tagged_courses"); raw != "" {
 			parts := strings.Split(raw, ",")
@@ -34,25 +25,43 @@ func CreateEvent(c *fiber.Ctx) error {
 			}
 		}
 	}
+}
+
+// getUserFromContext retrieves the user from context or fallback
+func getUserFromContext(c *fiber.Ctx) (models.User, error) {
+	user, ok := c.Locals("user").(models.User)
+	if !ok {
+		// Fallback: try to get from query/header (for backward compatibility)
+		studentID := c.Get(utils.HeaderStudentID)
+		if studentID == "" {
+			return models.User{}, fiber.NewError(401, utils.ErrUnauthorized)
+		}
+		var dbUser models.User
+		if err := connection.DB.Where("student_id = ?", studentID).First(&dbUser).Error; err != nil {
+			return models.User{}, fiber.NewError(401, utils.ErrUserNotFound)
+		}
+		user = dbUser
+	}
+	return user, nil
+}
+
+// CreateEvent creates a new event
+func CreateEvent(c *fiber.Ctx) error {
+	req := new(models.EventRequest)
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	parseTaggedCourses(req, c)
 
 	// Validate required fields
 	if req.Title == "" || req.EventDate == "" || req.StartTime == "" || req.EndTime == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Title, event_date, start_time, and end_time are required"})
 	}
 
-	// Get user from context (set by auth middleware)
-	user, ok := c.Locals("user").(models.User)
-	if !ok {
-		// Fallback: try to get from query/header (for backward compatibility)
-		studentID := c.Get(utils.HeaderStudentID)
-		if studentID == "" {
-			return c.Status(401).JSON(fiber.Map{"error": utils.ErrUnauthorized})
-		}
-		var dbUser models.User
-		if err := connection.DB.Where("student_id = ?", studentID).First(&dbUser).Error; err != nil {
-			return c.Status(401).JSON(fiber.Map{"error": utils.ErrUserNotFound})
-		}
-		user = dbUser
+	user, err := getUserFromContext(c)
+	if err != nil {
+		return err
 	}
 
 	event, err := services.CreateEvent(*req, user.StudentID, user.Role)

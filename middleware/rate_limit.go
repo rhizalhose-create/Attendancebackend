@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Simple in-memory rate limiter
+
 type rateLimiter struct {
 	visitors map[string]*visitor
 	mu       sync.RWMutex
@@ -23,11 +23,11 @@ type visitor struct {
 
 var limiter = &rateLimiter{
 	visitors: make(map[string]*visitor),
-	rate:     100,             // 100 requests
-	window:   1 * time.Minute, // per minute
+	rate:     100,
+	window:   1 * time.Minute,
 }
 
-// RateLimit middleware limits requests per IP
+
 func RateLimit(c *fiber.Ctx) error {
 	ip := c.IP()
 
@@ -42,7 +42,7 @@ func RateLimit(c *fiber.Ctx) error {
 		return c.Next()
 	}
 
-	// Reset if window expired
+
 	if time.Since(v.lastSeen) > limiter.window {
 		v.count = 1
 		v.lastSeen = time.Now()
@@ -50,7 +50,7 @@ func RateLimit(c *fiber.Ctx) error {
 		return c.Next()
 	}
 
-	// Check limit
+
 	if v.count >= limiter.rate {
 		limiter.mu.Unlock()
 		return c.Status(429).JSON(fiber.Map{

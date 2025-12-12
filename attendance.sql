@@ -116,11 +116,11 @@ CREATE TABLE IF NOT EXISTS attendances (
     latitude DECIMAL(10,8),
     longitude DECIMAL(11,8),
     notes TEXT,
-    -- Check-in/Check-out tracking
+
     check_in_time TIMESTAMP,
     check_out_time TIMESTAMP,
-    check_in_status VARCHAR(50), -- early, on_time, late
-    check_out_status VARCHAR(50), -- early, on_time, late
+    check_in_status VARCHAR(50),
+    check_out_status VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
@@ -134,25 +134,24 @@ CREATE INDEX IF NOT EXISTS idx_attendances_status ON attendances(status);
 CREATE INDEX IF NOT EXISTS idx_attendances_marked_at ON attendances(marked_at);
 CREATE INDEX IF NOT EXISTS idx_attendances_event_student ON attendances(event_id, student_id);
 
--- Add unique constraint to prevent duplicate attendance for same event and student
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_attendances_unique_event_student 
 ON attendances(event_id, student_id);
 
--- Add indexes for check-in/check-out
+
 CREATE INDEX IF NOT EXISTS idx_attendances_check_in_time ON attendances(check_in_time);
 CREATE INDEX IF NOT EXISTS idx_attendances_check_out_time ON attendances(check_out_time);
 
--- Add columns to users table for event-specific QR code tracking
+
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS active_event_id INTEGER,
 ADD COLUMN IF NOT EXISTS original_qr_code_data TEXT,
 ADD COLUMN IF NOT EXISTS original_qr_type VARCHAR(50);
 
--- Add foreign key for active_event_id
+
 ALTER TABLE users
 ADD CONSTRAINT fk_users_active_event
 FOREIGN KEY (active_event_id) REFERENCES events(id) ON DELETE SET NULL;
 
 
--- Add index for active_event_id
 CREATE INDEX IF NOT EXISTS idx_users_active_event_id ON users(active_event_id);

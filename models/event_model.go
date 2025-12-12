@@ -45,17 +45,18 @@ type Event struct {
 
 // EventRequest for creating/updating events
 type EventRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	EventDate   string `json:"event_date"` // ISO 8601 format
-	StartTime   string `json:"start_time"` // ISO 8601 format
-	EndTime     string `json:"end_time"`   // ISO 8601 format
-	Location    string `json:"location"`
-	Course      string `json:"course"`
-	Section     string `json:"section"`
-	YearLevel   string `json:"year_level"`
-	Department  string `json:"department"`
-	College     string `json:"college"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	EventDate      string `json:"event_date"` // ISO 8601 format
+	StartTime      string `json:"start_time"` // ISO 8601 format
+	EndTime        string `json:"end_time"`   // ISO 8601 format
+	Location       string `json:"location"`
+	Course         string `json:"course"`
+	Section        string `json:"section"`
+	YearLevel      string `json:"year_level"`
+	Department     string `json:"department"`
+	College        string `json:"college"`
+	RecaptchaToken string `json:"recaptcha_token,omitempty"`
 	// Support tagging multiple courses on create/update
 	TaggedCourses []string `json:"tagged_courses,omitempty"`
 }

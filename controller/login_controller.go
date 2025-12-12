@@ -18,11 +18,9 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	// Verify reCAPTCHA token if configured
-	if ok, err := services.VerifyRecaptcha(req.RecaptchaToken, c.IP(), "login"); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
-	} else if !ok {
-		return c.Status(400).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
+	// Validate required fields
+	if req.StudentID == "" || req.Password == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Student ID and password are required"})
 	}
 
 	if err := services.LoginService(*req); err != nil {
@@ -58,18 +56,17 @@ func LoginByEmail(c *fiber.Ctx) error {
 	type EmailLoginRequest struct {
 		Email          string `json:"email"`
 		Password       string `json:"password"`
-		RecaptchaToken string `json:"recaptcha_token,omitempty"`
+		RecaptchaToken string `json:"recaptcha_token"`
 	}
 
 	req := new(EmailLoginRequest)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
-	// Verify reCAPTCHA token if configured
-	if ok, err := services.VerifyRecaptcha(req.RecaptchaToken, c.IP(), "login"); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
-	} else if !ok {
-		return c.Status(400).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
+
+	// Validate required fields
+	if req.Email == "" || req.Password == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Email and password are required"})
 	}
 
 	if err := services.LoginByEmailService(req.Email, req.Password); err != nil {
