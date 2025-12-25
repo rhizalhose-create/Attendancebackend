@@ -28,7 +28,10 @@ func ForgotPassword(email string) (string, error) {
 	}
 
 	// Generate secure 6-digit code using crypto/rand
-	code := utils.GenerateVerificationCode()
+	code, err := utils.GenerateVerificationCode()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate verification code: %w", err)
+	}
 
 	// Save to password_resets table
 	reset := models.PasswordReset{

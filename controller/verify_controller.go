@@ -66,7 +66,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 		College:        pending.College,
 		ContactNumber:  pending.ContactNumber,
 		Address:        pending.Address,
-		ProfilePicture: pending.ProfilePicture,
+	
 		QRCodeData:     qrCodeBase64,
 		IsVerified:     true,
 		VerifiedAt:     time.Now(),

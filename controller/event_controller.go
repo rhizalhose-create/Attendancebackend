@@ -166,6 +166,8 @@ func UpdateEvent(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request format"})
 	}
 
+	parseTaggedCourses(req, c)
+
 	user, ok := c.Locals("user").(models.User)
 	if !ok {
 		studentID := c.Get(utils.HeaderStudentID)

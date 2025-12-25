@@ -31,7 +31,7 @@ type Attendance struct {
 	CheckInStatus  string     `json:"check_in_status,omitempty" gorm:"type:varchar(50)"`  // early, on_time, late
 	CheckOutStatus string     `json:"check_out_status,omitempty" gorm:"type:varchar(50)"` // early, on_time, late
 
-	// Timestamps
+
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
@@ -43,10 +43,10 @@ type Attendance struct {
 // AttendanceRequest for marking attendance
 type AttendanceRequest struct {
 	EventID        uint    `json:"event_id"`
-	StudentID      string  `json:"student_id,omitempty"` // Optional if from JWT
-	Status         string  `json:"status,omitempty"`     // Optional, defaults to "present"
-	Method         string  `json:"method,omitempty"`     // Optional, defaults to "qr_scan"
-	Action         string  `json:"action"`               // "check_in" or "check_out"
+	StudentID      string  `json:"student_id,omitempty"`
+	Status         string  `json:"status,omitempty"`
+	Method         string  `json:"method,omitempty"`
+	Action         string  `json:"action"`
 	Latitude       float64 `json:"latitude,omitempty"`
 	Longitude      float64 `json:"longitude,omitempty"`
 	Notes          string  `json:"notes,omitempty"`
@@ -60,5 +60,5 @@ type AttendanceStats struct {
 	AbsentCount    int     `json:"absent_count"`
 	LateCount      int     `json:"late_count"`
 	ExcusedCount   int     `json:"excused_count"`
-	AttendanceRate float64 `json:"attendance_rate"` // Percentage
+	AttendanceRate float64 `json:"attendance_rate"`
 }

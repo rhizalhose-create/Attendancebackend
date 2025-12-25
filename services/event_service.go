@@ -64,9 +64,12 @@ func CreateEvent(req models.EventRequest, createdBy, createdByRole string) (*mod
 		return nil, err
 	}
 
-	// If event has course and year_level, update student QR codes to event-specific
-	if req.Course != "" && req.YearLevel != "" {
-		go updateStudentQRCodesForEvent(event.ID, req.Course, req.YearLevel, req.Section)
+	// If event has tagged courses, update student QR codes to event-specific
+	if len(req.TaggedCourses) > 0 {
+		go updateStudentQRCodesForEvent(event.ID, req.TaggedCourses, req.YearLevel, req.Section)
+	} else if req.Course != "" && req.YearLevel != "" {
+		// Fallback to single course for backward compatibility
+		go updateStudentQRCodesForEvent(event.ID, []string{req.Course}, req.YearLevel, req.Section)
 	}
 
 	return event, nil
@@ -132,12 +135,20 @@ func generateEventQRCode(createdBy string) (string, error) {
 }
 
 // updateStudentQRCodesForEvent updates QR codes for students matching event criteria
-func updateStudentQRCodesForEvent(eventID uint, course, yearLevel, section string) {
+func updateStudentQRCodesForEvent(eventID uint, courses []string, yearLevel, section string) {
 	var students []models.User
-	query := connection.DB.Where("course = ? AND year_level = ?", course, yearLevel)
 
+	// Build query for multiple courses
+	query := connection.DB.Where("course IN ?", courses)
+
+	// Add year level filter if specified
+	if yearLevel != "" {
+		query = query.Where("year_level = ?", yearLevel)
+	}
+
+	// Add section filter if specified
 	if section != "" {
-		query = query.Where(sectionWhere, section)
+		query = query.Where("section = ?", section)
 	}
 
 	if err := query.Find(&students).Error; err != nil {
@@ -343,6 +354,16 @@ func UpdateEvent(eventID uint, req models.EventRequest, updatedBy string) (*mode
 		return nil, fmt.Errorf("failed to update event: %v", err)
 	}
 
+	// If tagged courses were updated, revert existing QR codes and generate new ones
+	if len(req.TaggedCourses) > 0 {
+		go func() {
+			// First revert existing QR codes
+			RevertStudentQRCodesForEvent(eventID)
+			// Then generate new ones for updated courses
+			updateStudentQRCodesForEvent(eventID, req.TaggedCourses, req.YearLevel, req.Section)
+		}()
+	}
+
 	return &event, nil
 }
 
@@ -468,6 +489,9 @@ func DeleteEvent(eventID uint, deletedBy string) error {
 	if err := connection.DB.Save(&event).Error; err != nil {
 		return fmt.Errorf("failed to delete event: %v", err)
 	}
+
+	// Revert student QR codes back to original when event is deleted
+	go RevertStudentQRCodesForEvent(eventID)
 
 	return nil
 }

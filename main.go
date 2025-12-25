@@ -32,6 +32,11 @@ func main() {
 	connection.Connect()
 	seeder.SeedSuperAdmin()
 
+	// Migrate audit logs table
+	if err := services.MigrateAuditLog(); err != nil {
+		logging.Logger.Warn("Failed to migrate audit logs", zap.Error(err))
+	}
+
 	// Start background job to check completed events and revert QR codes
 	go startEventStatusChecker()
 
@@ -62,16 +67,21 @@ func main() {
 	// Request logging with IP
 	app.Use(middleware.RequestLogger())
 
-	// CORS Configuration - Security: Restrict origins in production
+	// CORS Configuration - Restrict origins in production
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 	if allowedOrigins == "" {
-		allowedOrigins = "*" // Default for development, change in production
+		// In development, allow localhost; in production, must be explicit
+		if os.Getenv("ENV") == "production" {
+			allowedOrigins = "https://192.168.1.13.com" // Change in production
+		} else {
+			allowedOrigins = "http://192.168.1.13:3000,http://localhost:3001"
+		}
 	}
 
 	// Security: Fiber's CORS middleware disallows AllowCredentials=true with wildcard origins.
-	// If a wildcard origin is used (development), disable credentials to avoid panic.
 	allowCredentials := true
 	if allowedOrigins == "*" {
+		// Wildcard not allowed with credentials for security
 		allowCredentials = false
 	}
 
@@ -128,16 +138,15 @@ func main() {
 		zap.String("login", fmt.Sprintf("http://localhost:%s/login (POST)", port)),
 		zap.String("register", fmt.Sprintf("http://localhost:%s/register (POST)", port)),
 	)
-	logging.Logger.Info("Admin endpoints (require Bearer SUPERADMIN token)",
+	logging.Logger.Info("Admin endpoints (require Bearer JWT token with admin role)",
 		zap.String("users", fmt.Sprintf("GET http://localhost:%s/admin/users", port)),
 		zap.String("promote", fmt.Sprintf("POST http://localhost:%s/admin/promote", port)),
 	)
-	logging.Logger.Info("Default SuperAdmin credentials",
-		zap.String("student_id", "SUPERADMIN"),
-		zap.String("password", "superadmin123"),
+	logging.Logger.Warn("Default SuperAdmin - configure via environment variables",
+		zap.String("note", "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"),
 	)
 
-	app.Listen(":" + port)
+	app.Listen("0.0.0.0:" + port)
 }
 
 // startEventStatusChecker runs a background job to check and update completed events

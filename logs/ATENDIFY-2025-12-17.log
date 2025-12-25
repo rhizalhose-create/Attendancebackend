@@ -1,0 +1,194 @@
+{"level":"info","timestamp":"2025-12-17T21:37:20.576+0800","caller":"Attendancebackend-dev1/main.go:30","message":"Starting Attendance System Backend"}
+{"level":"info","timestamp":"2025-12-17T21:37:20.771+0800","caller":"Attendancebackend-dev1/main.go:131","message":"Server starting","port":"3000","host":"0.0.0.0"}
+{"level":"info","timestamp":"2025-12-17T21:37:20.771+0800","caller":"Attendancebackend-dev1/main.go:135","message":"Test endpoints available","test":"http://localhost:3000/test","health":"http://localhost:3000/health","login":"http://localhost:3000/login (POST)","register":"http://localhost:3000/register (POST)"}
+{"level":"info","timestamp":"2025-12-17T21:37:20.772+0800","caller":"Attendancebackend-dev1/main.go:141","message":"Admin endpoints (require Bearer JWT token with admin role)","users":"GET http://localhost:3000/admin/users","promote":"POST http://localhost:3000/admin/promote"}
+{"level":"warn","timestamp":"2025-12-17T21:37:20.772+0800","caller":"Attendancebackend-dev1/main.go:145","message":"Default SuperAdmin - configure via environment variables","note":"Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 21:38:21	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 21:38:21	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 21:38:21	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 21:38:21	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 21:38:21	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 21:38:48	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 21:38:48	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 21:38:48	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 21:38:48	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 21:38:48	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 21:39:03	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/register", "status": 500, "duration": "506.8µs"}
+2025-12-17 21:42:57	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 21:42:58	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 21:42:58	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 21:42:58	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 21:42:58	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 21:44:38	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/register", "status": 200, "duration": "3.0298813s"}
+2025-12-17 21:46:29	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 409, "duration": "3.0317ms"}
+2025-12-17 21:48:40	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 409, "duration": "3.147ms"}
+2025-12-17 21:52:05	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 200, "duration": "3.1562921s"}
+2025-12-17 21:54:14	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 21:54:14	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 21:54:14	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 21:54:14	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 21:54:14	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 22:02:18	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 409, "duration": "10.7056ms"}
+2025-12-17 22:03:39	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 409, "duration": "3.9984ms"}
+2025-12-17 22:26:08	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "586µs"}
+2025-12-17 22:26:12	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:26:32	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "653.5µs"}
+2025-12-17 22:26:33	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:26:35	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:27:03	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:27:04	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:27:05	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:27:22	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:27:23	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:27:23	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "580.1µs"}
+2025-12-17 22:27:25	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:27:26	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:28:24	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:28:29	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:28:52	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:29:08	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:29:09	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:30:50	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "1.6148ms"}
+2025-12-17 22:30:51	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:31:26	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "GET", "path": "/health", "status": 200, "duration": "4.0016ms"}
+2025-12-17 22:31:28	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/health", "status": 200, "duration": "0s"}
+2025-12-17 22:31:28	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/health", "status": 200, "duration": "511.8µs"}
+2025-12-17 22:31:44	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:32:14	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:32:21	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:32:23	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:32:40	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:32:48	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:34:39	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 22:34:40	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 22:34:40	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 22:34:40	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 22:34:40	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 22:35:02	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:04	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:06	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:07	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:09	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:10	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:12	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:13	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:23	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 22:35:23	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 22:35:23	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 22:35:23	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 22:35:23	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 22:35:34	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:36	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:38	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:39	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "486.2µs"}
+2025-12-17 22:35:41	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:42	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:43	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:45	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:35:46	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "392.1µs"}
+2025-12-17 22:36:08	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "GET", "path": "/", "status": 200, "duration": "0s"}
+2025-12-17 22:36:08	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "GET", "path": "/favicon.ico", "status": 200, "duration": "0s"}
+2025-12-17 22:36:47	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:37:28	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:37:37	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "OPTIONS", "path": "/login", "status": 204, "duration": "0s"}
+2025-12-17 22:40:25	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 22:40:25	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 22:40:25	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 22:40:25	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 22:40:25	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 22:41:28	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "GET", "path": "/health", "status": 200, "duration": "0s"}
+2025-12-17 22:41:30	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/health", "status": 200, "duration": "0s"}
+2025-12-17 22:41:30	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/health", "status": 200, "duration": "0s"}
+2025-12-17 22:46:51	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/health", "status": 200, "duration": "1.1956ms"}
+2025-12-17 22:46:52	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/me", "status": 200, "duration": "0s"}
+2025-12-17 22:46:52	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/251208-9620", "status": 200, "duration": "0s"}
+2025-12-17 22:46:53	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users/251208-9620", "status": 200, "duration": "0s"}
+2025-12-17 22:46:53	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "861µs"}
+2025-12-17 22:46:53	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "0s"}
+2025-12-17 22:46:53	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/me", "status": 200, "duration": "0s"}
+2025-12-17 22:47:38	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "241.2335ms"}
+2025-12-17 22:47:40	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "215.9143ms"}
+2025-12-17 22:47:43	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "263.385ms"}
+2025-12-17 22:47:48	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "208.8977ms"}
+2025-12-17 22:47:52	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "213.5828ms"}
+2025-12-17 22:47:54	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "215.7794ms"}
+2025-12-17 22:47:55	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "212.4288ms"}
+2025-12-17 22:47:57	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "208.4398ms"}
+2025-12-17 22:47:58	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "214.6502ms"}
+2025-12-17 22:47:59	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "206.4436ms"}
+2025-12-17 22:48:00	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "225.0524ms"}
+2025-12-17 22:48:08	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "210.1995ms"}
+2025-12-17 22:48:57	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "211.1774ms"}
+2025-12-17 22:48:58	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "213.8787ms"}
+2025-12-17 22:49:39	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 22:49:39	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 22:49:39	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 22:49:39	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 22:49:39	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 22:49:42	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "208.8611ms"}
+2025-12-17 22:50:11	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "213.1957ms"}
+2025-12-17 22:51:09	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 22:51:09	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 22:51:09	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 22:51:09	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 22:51:09	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 22:51:39	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 200, "duration": "6.831348s"}
+2025-12-17 22:52:53	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/api/v1/auth/verify", "status": 200, "duration": "0s"}
+2025-12-17 22:53:10	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/api/v1/auth/verify", "status": 200, "duration": "0s"}
+2025-12-17 22:53:19	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/api/v1/auth/verify", "status": 200, "duration": "0s"}
+2025-12-17 22:55:38	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "2.3654ms"}
+2025-12-17 22:56:06	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify", "status": 200, "duration": "16.3476ms"}
+2025-12-17 22:56:27	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "1.3365ms"}
+2025-12-17 22:56:35	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "2.6096ms"}
+2025-12-17 22:57:06	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "210.6525ms"}
+2025-12-17 22:57:35	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "208.4951ms"}
+2025-12-17 22:57:40	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "247.9203ms"}
+2025-12-17 22:58:34	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 400, "duration": "206.2017ms"}
+2025-12-17 22:59:35	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/login", "status": 400, "duration": "216.7527ms"}
+2025-12-17 23:00:31	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/login", "status": 200, "duration": "290.937ms"}
+2025-12-17 23:00:54	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 200, "duration": "213.4877ms"}
+2025-12-17 23:00:55	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/me", "status": 200, "duration": "0s"}
+2025-12-17 23:00:56	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/251217-9564", "status": 200, "duration": "0s"}
+2025-12-17 23:00:57	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users/251217-9564", "status": 200, "duration": "407.2µs"}
+2025-12-17 23:00:58	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "0s"}
+2025-12-17 23:00:59	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "0s"}
+2025-12-17 23:02:27	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/register", "status": 200, "duration": "6.365178s"}
+2025-12-17 23:03:50	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/verify", "status": 200, "duration": "3.887ms"}
+2025-12-17 23:04:28	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 200, "duration": "217.72ms"}
+2025-12-17 23:04:29	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/me", "status": 200, "duration": "0s"}
+2025-12-17 23:04:30	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/251217-9430", "status": 200, "duration": "0s"}
+2025-12-17 23:04:31	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users/251217-9430", "status": 200, "duration": "891.8µs"}
+2025-12-17 23:04:32	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "0s"}
+2025-12-17 23:04:33	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "0s"}
+2025-12-17 23:05:01	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/login", "status": 200, "duration": "212.6017ms"}
+2025-12-17 23:05:01	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/me", "status": 200, "duration": "0s"}
+2025-12-17 23:05:02	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/users/SUPERADMIN", "status": 200, "duration": "560.2µs"}
+2025-12-17 23:05:03	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users/SUPERADMIN", "status": 200, "duration": "0s"}
+2025-12-17 23:05:04	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "0s"}
+2025-12-17 23:05:06	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/admin/users", "status": 200, "duration": "0s"}
+2025-12-17 23:05:16	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/events", "status": 200, "duration": "998µs"}
+2025-12-17 23:05:27	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "GET", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:06:08	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:06:13	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:06:22	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:06:31	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:06:43	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:06:46	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:07:14	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:07:30	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:09:02	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:09:29	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-17 23:09:29	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-17 23:09:29	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-17 23:09:29	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-17 23:09:29	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-17 23:09:35	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:09:38	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:09:42	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:09:49	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:10:05	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:11:42	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:12:15	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:12:21	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:12:27	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}
+2025-12-17 23:12:32	INFO	logging/logger.go:93	HTTP Request	{"client_ip": "192.168.1.7", "method": "POST", "path": "/events", "status": 200, "duration": "0s"}

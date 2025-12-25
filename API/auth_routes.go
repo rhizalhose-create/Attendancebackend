@@ -13,6 +13,13 @@ func AuthRoutes(app *fiber.App) {
 	app.Post("/login", controller.Login)
 	app.Post("/login/email", controller.LoginByEmail)
 	app.Post("/verify", controller.VerifyEmail)
+	app.Post("/refresh-token", controller.RefreshToken)
+
+	// Protected routes (require authentication)
+	protected := app.Group("", middleware.RequireAuth)
+	{
+		protected.Get("/profile", controller.GetProfile)
+	}
 
 	// Password reset routes
 	app.Post("/forgot-password", controller.ForgotPassword)

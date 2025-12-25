@@ -33,8 +33,8 @@ func InitLogger() error {
 		Compress:   true,
 	}
 
-	// JSON encoder for file (structured)
-	fileEncoder := zapcore.NewJSONEncoder(zapcore.EncoderConfig{
+	// Text encoder for file (standard logs)
+	fileEncoder := zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
 		LevelKey:       "level",
 		NameKey:        "logger",
@@ -43,9 +43,9 @@ func InitLogger() error {
 		MessageKey:     "message",
 		StacktraceKey:  "stacktrace",
 		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     customTimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	})
 

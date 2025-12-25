@@ -10,12 +10,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const failedFetchUserProfile = "failed to fetch user profile"
+const (
+	failedFetchUserProfile         = "failed to fetch user profile"
+	errorInvalidRequest            = "Invalid request"
+	errorFailedGenerateAccessToken = "Failed to generate access token"
+)
 
 func Login(c *fiber.Ctx) error {
 	req := new(models.LoginRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		return c.Status(400).JSON(fiber.Map{"error": errorInvalidRequest})
 	}
 
 	// Validate required fields
@@ -42,12 +46,25 @@ func Login(c *fiber.Ctx) error {
 		}
 	}
 
+	// Generate JWT tokens
+	accessToken, err := services.GenerateAccessToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": errorFailedGenerateAccessToken})
+	}
+
+	refreshToken, err := services.GenerateRefreshToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate refresh token"})
+	}
+
 	return c.JSON(fiber.Map{
-		"message":    "Login successful",
-		"student_id": user.StudentID,
-		"role":       user.Role,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
+		"message":       "Login successful",
+		"student_id":    user.StudentID,
+		"role":          user.Role,
+		"first_name":    user.FirstName,
+		"last_name":     user.LastName,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
@@ -61,7 +78,7 @@ func LoginByEmail(c *fiber.Ctx) error {
 
 	req := new(EmailLoginRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		return c.Status(400).JSON(fiber.Map{"error": errorInvalidRequest})
 	}
 
 	// Validate required fields
@@ -78,12 +95,95 @@ func LoginByEmail(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
 	}
 
+	// Generate JWT tokens
+	accessToken, err := services.GenerateAccessToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": errorFailedGenerateAccessToken})
+	}
+
+	refreshToken, err := services.GenerateRefreshToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate refresh token"})
+	}
+
 	return c.JSON(fiber.Map{
-		"message":    "Login successful",
-		"email":      req.Email,
-		"student_id": user.StudentID,
-		"role":       user.Role,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
+		"message":       "Login successful",
+		"email":         req.Email,
+		"student_id":    user.StudentID,
+		"role":          user.Role,
+		"first_name":    user.FirstName,
+		"last_name":     user.LastName,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}
+
+// RefreshToken generates a new access token from a valid refresh token
+func RefreshToken(c *fiber.Ctx) error {
+	type RefreshRequest struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	req := new(RefreshRequest)
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": errorInvalidRequest})
+	}
+
+	if req.RefreshToken == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "refresh_token is required"})
+	}
+
+	// Verify refresh token
+	claims, err := services.VerifyRefreshToken(req.RefreshToken)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired refresh token"})
+	}
+
+	// Get user
+	var user models.User
+	if err := services.GetUserByStudentID(claims.StudentID, &user); err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	// Generate new access token
+	accessToken, err := services.GenerateAccessToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": errorFailedGenerateAccessToken})
+	}
+
+	return c.JSON(fiber.Map{
+		"message":      "Token refreshed successfully",
+		"access_token": accessToken,
+	})
+}
+
+// GetProfile returns the authenticated user's profile
+func GetProfile(c *fiber.Ctx) error {
+	// Get user from context (set by RequireAuth middleware)
+	user, ok := c.Locals("user").(models.User)
+	if !ok {
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message":        "Profile retrieved successfully",
+		"student_id":     user.StudentID,
+		"email":          user.Email,
+		"username":       user.Username,
+		"first_name":     user.FirstName,
+		"last_name":      user.LastName,
+		"middle_name":    user.MiddleName,
+		"role":           user.Role,
+		"course":         user.Course,
+		"year_level":     user.YearLevel,
+		"section":        user.Section,
+		"department":     user.Department,
+		"college":        user.College,
+		"contact_number": user.ContactNumber,
+		"address":        user.Address,
+		"is_verified":    user.IsVerified,
+		"verified_at":    user.VerifiedAt,
+
+		"created_at": user.CreatedAt,
 	})
 }

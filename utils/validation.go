@@ -27,18 +27,34 @@ func ValidatePassword(password string) (bool, string) {
 	if !hasUpper || !hasLower || !hasNumber {
 		return false, "Password must contain at least one uppercase letter, one lowercase letter, and one number"
 	}
+	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_=+\[\]{};:'",.<>?/\\|~` + "`" + `]`).MatchString(password)
+	if !hasSpecial {
+		return false, "Password must contain at least one special character (!@#$%^&*() etc)"
+	}
 	return true, ""
 }
 
-// SanitizeString removes potentially dangerous characters
+// SanitizeString removes potentially dangerous characters and SQL patterns
 func SanitizeString(input string) string {
 	// Remove null bytes and control characters
 	input = strings.ReplaceAll(input, "\x00", "")
 	input = strings.TrimSpace(input)
-	// Remove potential SQL injection patterns (basic protection)
+	// Remove potential SQL injection patterns
 	input = strings.ReplaceAll(input, "'", "")
 	input = strings.ReplaceAll(input, "\"", "")
 	input = strings.ReplaceAll(input, ";", "")
+	input = strings.ReplaceAll(input, "--", "")
+	input = strings.ReplaceAll(input, "/*", "")
+	input = strings.ReplaceAll(input, "*/", "")
+	// Block SQL keywords (case-insensitive check)
+	upper := strings.ToUpper(input)
+	sqlKeywords := []string{"UNION", "SELECT", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "EXECUTE"}
+	for _, keyword := range sqlKeywords {
+		if strings.Contains(upper, keyword) {
+			input = strings.ReplaceAll(input, keyword, "")
+			input = strings.ReplaceAll(strings.ToLower(input), strings.ToLower(keyword), "")
+		}
+	}
 	// Collapse multiple consecutive hyphens into a single hyphen
 	reHyphen := regexp.MustCompile("-{2,}")
 	input = reHyphen.ReplaceAllString(input, "-")
