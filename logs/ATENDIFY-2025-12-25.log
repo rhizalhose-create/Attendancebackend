@@ -1,0 +1,10 @@
+2025-12-25 12:24:24	INFO	Attendancebackend-dev1/main.go:30	Starting Attendance System Backend
+2025-12-25 12:24:24	INFO	Attendancebackend-dev1/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-25 12:24:24	INFO	Attendancebackend-dev1/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-25 12:24:24	INFO	Attendancebackend-dev1/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-25 12:24:24	WARN	Attendancebackend-dev1/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}
+2025-12-25 13:04:59	INFO	Attendancebackend-olla/main.go:30	Starting Attendance System Backend
+2025-12-25 13:04:59	INFO	Attendancebackend-olla/main.go:131	Server starting	{"port": "3000", "host": "0.0.0.0"}
+2025-12-25 13:04:59	INFO	Attendancebackend-olla/main.go:135	Test endpoints available	{"test": "http://localhost:3000/test", "health": "http://localhost:3000/health", "login": "http://localhost:3000/login (POST)", "register": "http://localhost:3000/register (POST)"}
+2025-12-25 13:04:59	INFO	Attendancebackend-olla/main.go:141	Admin endpoints (require Bearer JWT token with admin role)	{"users": "GET http://localhost:3000/admin/users", "promote": "POST http://localhost:3000/admin/promote"}
+2025-12-25 13:04:59	WARN	Attendancebackend-olla/main.go:145	Default SuperAdmin - configure via environment variables	{"note": "Use SUPERADMIN_STUDENT_ID and SUPERADMIN_PASSWORD env vars"}

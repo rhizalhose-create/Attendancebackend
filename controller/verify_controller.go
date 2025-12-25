@@ -4,9 +4,11 @@ package controller
 import (
 	"attendance-system/connection"
 	"attendance-system/models"
-	"fmt"
+	"attendance-system/utils"
 	"encoding/base64"
+	"fmt"
 	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/skip2/go-qrcode"
 )
@@ -21,6 +23,10 @@ func VerifyEmail(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
+
+	// Sanitize inputs
+	req.Email = utils.SanitizeEmail(req.Email)
+	req.Code = utils.SanitizeString(req.Code)
 
 	// Find pending user
 	var pending models.PendingUser
@@ -41,31 +47,34 @@ func VerifyEmail(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate QR code"})
 	}
-	
+
 	qrCodeBase64 := "data:image/png;base64," + base64.StdEncoding.EncodeToString(qrCodePNG)
 
 	// Move to User table
 	user := models.User{
-		StudentID:     pending.StudentID,
-		Email:         pending.Email,
-		Password:      pending.Password,
-		Username:      pending.Username,
-		FirstName:     pending.FirstName,
-		LastName:      pending.LastName,
-		MiddleName:    pending.MiddleName,
-		Course:        pending.Course,
-		YearLevel:     pending.YearLevel,
-		Section:       pending.Section,
-		Department:    pending.Department,
-		College:       pending.College,
-		ContactNumber: pending.ContactNumber,
-		Address:       pending.Address,
-		QRCodeData:    qrCodeBase64,
-		IsVerified:    true,
-		VerifiedAt:    time.Now(),
+		StudentID:      pending.StudentID,
+		Email:          pending.Email,
+		Password:       pending.Password,
+		Username:       pending.Username,
+		FirstName:      pending.FirstName,
+		LastName:       pending.LastName,
+		MiddleName:     pending.MiddleName,
+		Course:         pending.Course,
+		YearLevel:      pending.YearLevel,
+		Section:        pending.Section,
+		Department:     pending.Department,
+		College:        pending.College,
+		ContactNumber:  pending.ContactNumber,
+		Address:        pending.Address,
+	
+		QRCodeData:     qrCodeBase64,
+		IsVerified:     true,
+		VerifiedAt:     time.Now(),
 	}
 
-	if err := connection.DB.Create(&user).Error; err != nil {
+	// Ensure ID is zero so DB assigns it (defensive against client-provided IDs)
+	user.ID = 0
+	if err := connection.DB.Omit("id").Create(&user).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to create user account"})
 	}
 

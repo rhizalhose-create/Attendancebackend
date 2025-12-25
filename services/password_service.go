@@ -4,12 +4,10 @@ package services
 import (
 	"attendance-system/connection"
 	"attendance-system/models"
+	"attendance-system/utils"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Constants
@@ -19,16 +17,21 @@ const (
 )
 
 func ForgotPassword(email string) (string, error) {
+	// Sanitize input
+	email = utils.SanitizeEmail(email)
+
 	// Check if email exists in users table
 	var user models.User
 	if err := connection.DB.Where(emailQuery, email).First(&user).Error; err != nil {
 		// For security, don't reveal if email exists
-		fmt.Printf("Password reset requested for: %s\n", email)
 		return "", nil
 	}
 
-	// Generate 6-digit code (same as verification)
-	code := fmt.Sprintf("%06d", rand.Intn(1000000))
+	// Generate secure 6-digit code using crypto/rand
+	code, err := utils.GenerateVerificationCode()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate verification code: %w", err)
+	}
 
 	// Save to password_resets table
 	reset := models.PasswordReset{
@@ -38,25 +41,26 @@ func ForgotPassword(email string) (string, error) {
 		Used:      false,
 	}
 
-	if err := connection.DB.Create(&reset).Error; err != nil {
+	if err := connection.DB.Omit("id").Create(&reset).Error; err != nil {
 		return "", fmt.Errorf("failed to create reset record: %v", err)
 	}
 
 	// Send email with code
-	emailBody := fmt.Sprintf(`
-		<h1>Password Reset Code</h1>
-		<p>You requested to reset your password.</p>
-		<p>Your password reset code is: <strong style="font-size: 24px;">%s</strong></p>
-		<p>Enter this code on the password reset page.</p>
+	content := fmt.Sprintf(`<p>You requested to reset your password.</p>
+		<p><strong>Reset code:</strong></p>
+		<p style="font-size:22px; font-weight:700; letter-spacing:2px;">%s</p>
 		<p>This code will expire in 15 minutes.</p>
 		<p>If you didn't request this, please ignore this email.</p>
 	`, code)
 
-	if err := SendEmail(email, "Password Reset Code - Attendance System", emailBody); err != nil {
-		fmt.Printf("Failed to send reset email: %v\n", err)
+	footer := `<p class="muted">If you didn't request this change, contact support immediately.</p>`
+	htmlBody := BuildHTMLEmail("Password reset code", "Password Reset Code", content, footer)
+
+	if err := SendEmail(email, "Password Reset Code - Attendance System", htmlBody); err != nil {
+		// Log error without exposing sensitive information
+		fmt.Printf("Failed to send reset email\n")
 	}
 
-	fmt.Printf("Reset code sent to: %s, code: %s\n", email, code)
 	return code, nil
 }
 
@@ -69,6 +73,10 @@ func VerifyResetCode(email, code string) error {
 }
 
 func ResetPasswordWithCode(email, code, newPassword string) error {
+	// Sanitize inputs
+	email = utils.SanitizeEmail(email)
+	code = utils.SanitizeString(code)
+
 	// Verify code first
 	var reset models.PasswordReset
 	if err := connection.DB.Where(codeQuery, email, code, false, time.Now()).First(&reset).Error; err != nil {
@@ -76,9 +84,9 @@ func ResetPasswordWithCode(email, code, newPassword string) error {
 	}
 
 	// Hash new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+	hashedPassword, err := utils.HashPassword(newPassword)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %v", err)
+		return fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	// Find user
@@ -94,21 +102,22 @@ func ResetPasswordWithCode(email, code, newPassword string) error {
 
 	// Mark code as used
 	if err := connection.DB.Model(&reset).Update("used", true).Error; err != nil {
-		fmt.Printf("Failed to mark code as used: %v\n", err)
+		// Log error without exposing sensitive information
+		fmt.Printf("Failed to mark code as used\n")
 	}
 
 	// Send confirmation email
-	emailBody := `
-		<h1>Password Changed</h1>
-		<p>Your password has been successfully reset.</p>
-		<p>You can now login with your new password.</p>
+	content := `<p>Your password has been successfully reset.</p>
+		<p>You can now log in with your new password.</p>
 		<p>If you didn't make this change, contact support immediately.</p>`
+	footer := `<p class="muted">If you did not initiate this change, please contact support.</p>`
+	htmlBody := BuildHTMLEmail("Password changed", "Password Changed", content, footer)
 
-	if err := SendEmail(email, "Password Changed - Attendance System", emailBody); err != nil {
-		fmt.Printf("Failed to send confirmation: %v\n", err)
+	if err := SendEmail(email, "Password Changed - Attendance System", htmlBody); err != nil {
+		// Log error without exposing sensitive information
+		fmt.Printf("Failed to send confirmation email\n")
 	}
 
-	fmt.Printf("Password reset for: %s\n", email)
 	return nil
 }
 
@@ -116,7 +125,7 @@ func ResetPasswordWithCode(email, code, newPassword string) error {
 func ResendResetCode(email string) (string, error) {
 	// Delete any existing unused codes for this email
 	connection.DB.Where("email = ? AND used = ?", email, false).Delete(&models.PasswordReset{})
-	
+
 	// Generate and send new code
 	return ForgotPassword(email)
 }

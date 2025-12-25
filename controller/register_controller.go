@@ -4,17 +4,17 @@ package controller
 import (
 	"attendance-system/models"
 	"attendance-system/services"
+
 	"github.com/gofiber/fiber/v2"
 )
 
 func Register(c *fiber.Ctx) error {
 	req := new(models.RegisterRequest)
-	
+
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request format"})
 	}
 
-	// Validate required fields (StudentID is now optional)
 	if req.Email == "" || req.Password == "" || req.Username == "" || req.FirstName == "" || req.LastName == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Email, password, username, first name, and last name are required"})
 	}
@@ -38,8 +38,8 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"message":     "Registration successful. Please check your email for verification code and your Student ID.",
-		"status":      "pending_verification",
-		"student_id":  generatedStudentID, // Include the generated StudentID in response
+		"message":    "Registration successful. Please check your email for verification code and your Student ID.",
+		"status":     "pending_verification",
+		"student_id": generatedStudentID, // Include the generated StudentID in response
 	})
 }

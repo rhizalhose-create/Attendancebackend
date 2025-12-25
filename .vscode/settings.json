@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "myzcent",
+        "projectKey": "Myzcent_Attendance"
+    }
+}
