@@ -48,8 +48,6 @@ func VerifyEmail(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate QR code"})
 	}
 
-	qrCodeBase64 := "data:image/png;base64," + base64.StdEncoding.EncodeToString(qrCodePNG)
-
 	// Move to User table
 	user := models.User{
 		StudentID:      pending.StudentID,
@@ -67,7 +65,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 		ContactNumber:  pending.ContactNumber,
 		Address:        pending.Address,
 	
-		QRCodeData:     qrCodeBase64,
+		QRCodeData:     "data:image/png;base64," + base64.StdEncoding.EncodeToString(qrCodePNG),
 		IsVerified:     true,
 		VerifiedAt:     time.Now(),
 	}
@@ -83,7 +81,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"message":      "Email verified successfully!",
-		"qr_code_data": qrCodeBase64,
+		"qr_code_data": user.QRCodeData,
 		"user": fiber.Map{
 			"student_id": user.StudentID,
 			"email":      user.Email,

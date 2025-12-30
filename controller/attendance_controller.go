@@ -140,11 +140,10 @@ func GetAttendanceStats(c *fiber.Ctx) error {
 	studentID := c.Query("student_id")
 	eventIDStr := c.Query("event_id")
 
-	var eventID *uint
+	var eventID uint
 	if eventIDStr != "" {
 		if id, err := strconv.ParseUint(eventIDStr, 10, 32); err == nil {
-			idUint := uint(id)
-			eventID = &idUint
+			eventID = uint(id)
 		}
 	}
 
@@ -156,7 +155,7 @@ func GetAttendanceStats(c *fiber.Ctx) error {
 		}
 	}
 
-	stats, err := services.GetAttendanceStats(studentID, eventID)
+	stats, err := services.GetAttendanceStats(studentID, &eventID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}

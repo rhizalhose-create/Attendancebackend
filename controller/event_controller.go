@@ -139,7 +139,7 @@ func GetMyEvents(c *fiber.Ctx) error {
 	var events []models.Event
 	var err error
 	if user.Role == "superadmin" || user.Role == "admin" || user.Role == "faculty" {
-		events, err = services.GetAllEvents(map[string]interface{}{})
+		events, err = services.GetAllEvents(nil)
 	} else {
 		events, err = services.GetEventsByStudent(user.StudentID)
 	}

@@ -24,29 +24,39 @@ func extractStudentID(c *fiber.Ctx) (string, string, error) {
 
 	// Extract from "Bearer {token}"
 	parts := strings.Split(authHeader, " ")
-	var token string
 	if len(parts) == 2 && parts[0] == "Bearer" {
-		token = parts[1]
+		if parts[1] == "" {
+			return "", "", fiber.NewError(fiber.StatusUnauthorized, "Token is required")
+		}
+		
+		// Try JWT first
+		claims, err := services.VerifyAccessToken(parts[1])
+		if err == nil {
+			// Valid JWT token
+			return claims.StudentID, claims.Role, nil
+		}
+		
+		// Fallback: treat as legacy student ID format (for backward compatibility)
+		// This should be deprecated in future versions
+		return parts[1], "", nil
 	} else if len(parts) == 1 {
-		token = parts[0]
+		if parts[0] == "" {
+			return "", "", fiber.NewError(fiber.StatusUnauthorized, "Token is required")
+		}
+		
+		// Try JWT first
+		claims, err := services.VerifyAccessToken(parts[0])
+		if err == nil {
+			// Valid JWT token
+			return claims.StudentID, claims.Role, nil
+		}
+		
+		// Fallback: treat as legacy student ID format (for backward compatibility)
+		// This should be deprecated in future versions
+		return parts[0], "", nil
 	} else {
 		return "", "", fiber.NewError(fiber.StatusUnauthorized, "Invalid authorization format. Use: Bearer {JWT_token}")
 	}
-
-	if token == "" {
-		return "", "", fiber.NewError(fiber.StatusUnauthorized, "Token is required")
-	}
-
-	// Try JWT first
-	claims, err := services.VerifyAccessToken(token)
-	if err == nil {
-		// Valid JWT token
-		return claims.StudentID, claims.Role, nil
-	}
-
-	// Fallback: treat as legacy student ID format (for backward compatibility)
-	// This should be deprecated in future versions
-	return token, "", nil
 }
 
 func RequireSuperAdmin(c *fiber.Ctx) error {

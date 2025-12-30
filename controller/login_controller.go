@@ -32,7 +32,6 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	// Fetch user profile so caller gets the current role immediately
-	// Determine lookup key (email vs student id)
 	var user models.User
 	if strings.Contains(req.StudentID, "@") {
 		// login by email
@@ -40,8 +39,7 @@ func Login(c *fiber.Ctx) error {
 			return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
 		}
 	} else {
-		sid := utils.SanitizeStudentID(req.StudentID)
-		if err := services.GetUserByStudentID(sid, &user); err != nil {
+		if err := services.GetUserByStudentID(utils.SanitizeStudentID(req.StudentID), &user); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
 		}
 	}
