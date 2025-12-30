@@ -55,6 +55,7 @@ type RegisterRequest struct {
 	ContactNumber  string `json:"contact_number,omitempty"`
 	Address        string `json:"address,omitempty"`
 	ProfilePicture string `json:"profile_picture,omitempty"` // Base64 encoded image
+	RecaptchaToken string `json:"recaptcha_token,omitempty"`
 }
 
 const (

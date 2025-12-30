@@ -43,16 +43,17 @@ func ForgotPassword(email string) (string, error) {
 	}
 
 	// Send email with code
-	emailBody := fmt.Sprintf(`
-		<h1>Password Reset Code</h1>
-		<p>You requested to reset your password.</p>
-		<p>Your password reset code is: <strong style="font-size: 24px;">%s</strong></p>
-		<p>Enter this code on the password reset page.</p>
+	content := fmt.Sprintf(`<p>You requested to reset your password.</p>
+		<p><strong>Reset code:</strong></p>
+		<p style="font-size:22px; font-weight:700; letter-spacing:2px;">%s</p>
 		<p>This code will expire in 15 minutes.</p>
 		<p>If you didn't request this, please ignore this email.</p>
 	`, code)
 
-	if err := SendEmail(email, "Password Reset Code - Attendance System", emailBody); err != nil {
+	footer := `<p class="muted">If you didn't request this change, contact support immediately.</p>`
+	htmlBody := BuildHTMLEmail("Password reset code", "Password Reset Code", content, footer)
+
+	if err := SendEmail(email, "Password Reset Code - Attendance System", htmlBody); err != nil {
 		// Log error without exposing sensitive information
 		fmt.Printf("Failed to send reset email\n")
 	}
@@ -103,13 +104,13 @@ func ResetPasswordWithCode(email, code, newPassword string) error {
 	}
 
 	// Send confirmation email
-	emailBody := `
-		<h1>Password Changed</h1>
-		<p>Your password has been successfully reset.</p>
-		<p>You can now login with your new password.</p>
+	content := `<p>Your password has been successfully reset.</p>
+		<p>You can now log in with your new password.</p>
 		<p>If you didn't make this change, contact support immediately.</p>`
+	footer := `<p class="muted">If you did not initiate this change, please contact support.</p>`
+	htmlBody := BuildHTMLEmail("Password changed", "Password Changed", content, footer)
 
-	if err := SendEmail(email, "Password Changed - Attendance System", emailBody); err != nil {
+	if err := SendEmail(email, "Password Changed - Attendance System", htmlBody); err != nil {
 		// Log error without exposing sensitive information
 		fmt.Printf("Failed to send confirmation email\n")
 	}

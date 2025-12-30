@@ -43,6 +43,20 @@ func Connect() {
 		&models.Attendance{},
 	)
 
+	// Ensure `tagged_courses` column exists for older databases that may
+	// not have been migrated to include the new field. Prefer GORM Migrator
+	// which will use the current DB connection and respects permissions.
+	if !db.Migrator().HasColumn(&models.Event{}, "tagged_courses") {
+		// Try to add column using GORM migrator (field name)
+		if err := db.Migrator().AddColumn(&models.Event{}, "TaggedCoursesCSV"); err != nil {
+			log.Printf("Failed to add column tagged_courses: %v", err)
+			// Fallback: attempt a safe raw ALTER TABLE (IF NOT EXISTS)
+			if execErr := db.Exec("ALTER TABLE events ADD COLUMN IF NOT EXISTS tagged_courses text").Error; execErr != nil {
+				log.Printf("Fallback ALTER TABLE failed: %v", execErr)
+			}
+		}
+	}
+
 	DB = db
 	log.Println("Database connected!")
 }

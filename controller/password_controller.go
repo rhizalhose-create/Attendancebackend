@@ -1,4 +1,3 @@
-// controller/password_controller.go
 package controller
 
 import (
@@ -21,23 +20,24 @@ const (
 	SuccessNewCodeSent   = "New code sent if email is registered"
 )
 
-// ForgotPassword - Request reset code
 func ForgotPassword(c *fiber.Ctx) error {
-
 	req := new(models.ResetPasswordRequest)
 	if err := c.BodyParser(req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": ErrInvalidRequest})
+	}
+
+	if ok, err := services.VerifyRecaptchaV3(req.RecaptchaToken, c.IP(), "forgot_password"); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
+	} else if !ok {
+		return c.Status(400).JSON(fiber.Map{"error": utils.ErrRecaptchaVerificationFailed})
 	}
 
 	if req.Email == "" {
 		return c.Status(400).JSON(fiber.Map{"error": ErrEmailRequired})
 	}
 
-	// Always return success (security)
 	_, err := services.ForgotPassword(req.Email)
 	if err != nil {
-		// Log error without exposing sensitive information
-		// Error is already handled in service layer
 	}
 
 	return c.JSON(fiber.Map{
@@ -56,7 +56,6 @@ func ResetPassword(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": ErrAllFieldsRequired})
 	}
 
-	// Validate password strength using same rules as registration
 	if valid, msg := utils.ValidatePassword(req.NewPassword); !valid {
 		return c.Status(400).JSON(fiber.Map{"error": msg})
 	}
@@ -91,8 +90,6 @@ func ResendCode(c *fiber.Ctx) error {
 
 	_, err := services.ResendResetCode(req.Email)
 	if err != nil {
-		// Log error without exposing sensitive information
-		// Error is already handled in service layer
 	}
 
 	return c.JSON(fiber.Map{

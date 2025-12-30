@@ -33,7 +33,7 @@ func CreateEvent(req models.EventRequest, createdBy, createdByRole string) (*mod
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate QR code: %v", err)
 	}
-
+	// Build event object
 	event := &models.Event{
 		Title:         req.Title,
 		Description:   req.Description,
@@ -53,23 +53,15 @@ func CreateEvent(req models.EventRequest, createdBy, createdByRole string) (*mod
 		QRCodeData:    qrCodeBase64,
 	}
 
+	// Normalize and set tagged courses (helper handles trimming/uppercasing)
+	setTaggedCoursesFromRequest(event, req)
+
 	// Ensure ID is zero so DB assigns it
 	event.ID = 0
 
-	if err := connection.DB.Omit("id").Create(event).Error; err != nil {
-		// If the error is a duplicate primary key, attempt to fix sequence and retry once.
-		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-			// Resync sequence for events.id using pg_get_serial_sequence
-			_ = connection.DB.Exec("SELECT setval(pg_get_serial_sequence('events','id'), (SELECT COALESCE(MAX(id),1) FROM events))")
-			// Retry create once (omit id again explicitly)
-			if err2 := connection.DB.Omit("id").Create(event).Error; err2 == nil {
-				// success on retry
-			} else {
-				return nil, fmt.Errorf("failed to create event after sequence fix: %v", err2)
-			}
-		} else {
-			return nil, fmt.Errorf("failed to create event: %v", err)
-		}
+	// Persist event (handles duplicate-key sequence resync + retry)
+	if err := persistEvent(event); err != nil {
+		return nil, err
 	}
 
 	// If event has course and year_level, update student QR codes to event-specific
@@ -78,6 +70,25 @@ func CreateEvent(req models.EventRequest, createdBy, createdByRole string) (*mod
 	}
 
 	return event, nil
+}
+
+// persistEvent inserts an event while omitting client-provided ID, and retries once
+// after resyncing the sequence if a duplicate-key error occurs.
+func persistEvent(event *models.Event) error {
+	if err := connection.DB.Omit("id").Create(event).Error; err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			// Resync sequence for events.id using pg_get_serial_sequence
+			_ = connection.DB.Exec("SELECT setval(pg_get_serial_sequence('events','id'), (SELECT COALESCE(MAX(id),1) FROM events))")
+			// Retry create once (omit id again explicitly)
+			err2 := connection.DB.Omit("id").Create(event).Error
+			if err2 == nil {
+				return nil
+			}
+			return fmt.Errorf("failed to create event after sequence fix: %v", err2)
+		}
+		return fmt.Errorf("failed to create event: %v", err)
+	}
+	return nil
 }
 
 // parseEventDateTimes parses EventDate, StartTime and EndTime from request and returns
@@ -408,6 +419,29 @@ func applyOtherUpdates(event *models.Event, req models.EventRequest) {
 	if req.College != "" {
 		event.College = req.College
 	}
+	// Update tagged courses if provided
+	setTaggedCoursesFromRequest(event, req)
+}
+
+// setTaggedCoursesFromRequest normalizes and sets tagged courses on the event from the request.
+func setTaggedCoursesFromRequest(event *models.Event, req models.EventRequest) {
+	if len(req.TaggedCourses) == 0 {
+		return
+	}
+	var cleaned []string
+	for _, c := range req.TaggedCourses {
+		c = strings.ToUpper(strings.TrimSpace(c))
+		if c != "" {
+			cleaned = append(cleaned, c)
+		}
+	}
+	if len(cleaned) > 0 {
+		event.TaggedCoursesCSV = strings.Join(cleaned, ",")
+		event.TaggedCourses = cleaned
+	} else {
+		event.TaggedCoursesCSV = ""
+		event.TaggedCourses = nil
+	}
 }
 
 // DeleteEvent deletes an event (soft delete by setting is_active to false)
@@ -445,24 +479,62 @@ func GetEventsByStudent(studentID string) ([]models.Event, error) {
 		return nil, errors.New("student not found")
 	}
 
+	// Return all active events but compute whether the student is allowed to enter
 	var events []models.Event
 	query := connection.DB.Where("is_active = ?", true)
-
-	// Only return events that are explicitly tagged for the student's course/section/year.
-	// Do not include events with empty course/section/year (untagged events) for students.
-	if user.Course != "" {
-		query = query.Where("course = ?", user.Course)
-	}
-	if user.Section != "" {
-		query = query.Where(sectionWhere, user.Section)
-	}
-	if user.YearLevel != "" {
-		query = query.Where("year_level = ?", user.YearLevel)
-	}
-
 	if err := query.Order("event_date DESC, start_time DESC").Find(&events).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch events: %v", err)
 	}
 
+	populateTaggedCoursesAndAllowed(events, &user)
+
 	return events, nil
+}
+
+// populateTaggedCoursesAndAllowed fills transient TaggedCourses and Allowed fields
+// for a slice of events given a user. This keeps the logic out of GetEventsByStudent
+// and reduces its cognitive complexity.
+func populateTaggedCoursesAndAllowed(events []models.Event, user *models.User) {
+	for i := range events {
+		events[i].TaggedCourses = parseTaggedCoursesCSV(events[i].TaggedCoursesCSV)
+		events[i].Allowed = isUserAllowedForEvent(events[i], user)
+	}
+}
+
+// parseTaggedCoursesCSV converts a CSV string to a normalized slice of course tags.
+func parseTaggedCoursesCSV(csv string) []string {
+	if csv == "" {
+		return nil
+	}
+	parts := strings.Split(csv, ",")
+	var trimmed []string
+	for _, p := range parts {
+		p = strings.ToUpper(strings.TrimSpace(p))
+		if p != "" {
+			trimmed = append(trimmed, p)
+		}
+	}
+	if len(trimmed) == 0 {
+		return nil
+	}
+	return trimmed
+}
+
+// isUserAllowedForEvent returns whether the given user may enter the event.
+func isUserAllowedForEvent(event models.Event, user *models.User) bool {
+	// No tags => open to all
+	if len(event.TaggedCourses) == 0 {
+		return true
+	}
+	// Student without course info cannot enter tagged events
+	if user.Course == "" {
+		return false
+	}
+	userCourse := strings.ToUpper(strings.TrimSpace(user.Course))
+	for _, c := range event.TaggedCourses {
+		if c == userCourse {
+			return true
+		}
+	}
+	return false
 }
