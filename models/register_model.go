@@ -34,9 +34,6 @@ type User struct {
 	ActiveEventID      *uint  `json:"active_event_id,omitempty" gorm:"index"`
 	OriginalQRCodeData string `json:"original_qr_code_data,omitempty" gorm:"type:text"`
 	OriginalQRType     string `json:"original_qr_type,omitempty" gorm:"type:varchar(50)"`
-
-	// Profile Picture
-	ProfilePicture string `json:"profile_picture,omitempty" gorm:"type:text"`
 }
 
 type RegisterRequest struct {
@@ -54,7 +51,6 @@ type RegisterRequest struct {
 	College        string `json:"college,omitempty"`
 	ContactNumber  string `json:"contact_number,omitempty"`
 	Address        string `json:"address,omitempty"`
-	ProfilePicture string `json:"profile_picture,omitempty"` // Base64 encoded image
 	RecaptchaToken string `json:"recaptcha_token,omitempty"`
 }
 

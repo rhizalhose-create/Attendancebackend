@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"attendance-system/models"
 	"attendance-system/services"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,9 +9,9 @@ import (
 
 func Register(c *fiber.Ctx) error {
 	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Name     string `json:"name"`
+		Email          string `json:"email"`
+		Password       string `json:"password"`
+		Name           string `json:"name"`
 		RecaptchaToken string `json:"recaptcha_token"`
 	}
 
@@ -22,12 +23,13 @@ func Register(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "All fields are required"})
 	}
 
-	isValid, err := services.VerifyRecaptcha(req.RecaptchaToken)
+	_, err := services.RegisterService(models.RegisterRequest{
+		Email:     req.Email,
+		Password:  req.Password,
+		FirstName: req.Name,
+	})
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Internal server error"})
-	}
-	if !isValid {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid reCAPTCHA"})
+		return c.Status(400).JSON(fiber.Map{"error": "Registration failed"})
 	}
 
 	return c.JSON(fiber.Map{

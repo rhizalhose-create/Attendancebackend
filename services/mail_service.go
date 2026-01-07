@@ -3,6 +3,7 @@
 package services
 
 import (
+	"crypto/tls"
 	"fmt"
 	"html"
 	"os"
@@ -17,10 +18,24 @@ import (
 // The caller should pass a fully-formed HTML body; the function will generate
 // a plain-text fallback by stripping tags.
 func SendEmail(to string, subject string, htmlBody string) error {
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASS")
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := getSMTPPort()
+
+	// Validate SMTP configuration
+	if smtpUser == "" || smtpPass == "" || smtpHost == "" {
+		return fmt.Errorf("SMTP credentials not configured in environment variables")
+	}
+
+	if to == "" {
+		return fmt.Errorf("recipient email address is empty")
+	}
+
 	plain := htmlToPlain(htmlBody)
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", os.Getenv("SMTP_USER"))
+	m.SetHeader("From", smtpUser)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 
@@ -28,14 +43,17 @@ func SendEmail(to string, subject string, htmlBody string) error {
 	m.SetBody("text/plain", plain)
 	m.AddAlternative("text/html", htmlBody)
 
-	d := gomail.NewDialer(
-		os.Getenv("SMTP_HOST"),
-		getSMTPPort(),
-		os.Getenv("SMTP_USER"),
-		os.Getenv("SMTP_PASS"),
-	)
+	d := gomail.NewDialer(smtpHost, smtpPort, smtpUser, smtpPass)
+	// Enable TLS for port 587 (Gmail and most providers)
+	d.StartTLSConfig = &tls.Config{InsecureSkipVerify: false}
 
-	return d.DialAndSend(m)
+	err := d.DialAndSend(m)
+	if err != nil {
+		return fmt.Errorf("failed to send email to %s: %w", to, err)
+	}
+
+	fmt.Printf("Email sent successfully to %s\n", to)
+	return nil
 }
 
 func getSMTPPort() int {

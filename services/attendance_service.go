@@ -207,12 +207,27 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 
 	parts := strings.Split(event.TaggedCoursesCSV, ",")
 	userCourse := strings.ToUpper(strings.TrimSpace(student.Course))
+	userYearLevel := strings.ToUpper(strings.TrimSpace(student.YearLevel))
+
+	// Check if student's course matches any tagged course
+	courseAllowed := false
 	for _, c := range parts {
 		if strings.ToUpper(strings.TrimSpace(c)) == userCourse {
-			return nil
+			courseAllowed = true
+			break
 		}
 	}
-	return ErrEventAccessDenied
+
+	if !courseAllowed {
+		return ErrEventAccessDenied
+	}
+
+	// If event specifies year level, also check year level
+	if event.YearLevel != "" && strings.ToUpper(strings.TrimSpace(event.YearLevel)) != userYearLevel {
+		return ErrEventAccessDenied
+	}
+
+	return nil
 }
 
 // persistAttendance saves or creates the attendance record. If isNew is true,
@@ -227,11 +242,11 @@ func persistAttendance(att *models.Attendance, isNew bool) error {
 	return nil
 }
 
-// sendCheckInNotification sends email to admin when student checks in
+// sendCheckInNotification sends email to superadmin, admin, and event creator when student checks in
 func sendCheckInNotification(event models.Event, student models.User, checkInTime time.Time, status string) {
-	// Get admin emails (event creator and all admins/faculty)
+	// Get superadmin and admin emails
 	var admins []models.User
-	connection.DB.Where("role IN ?", []string{"superadmin", "admin", "faculty"}).Find(&admins)
+	connection.DB.Where("role IN ?", []string{"superadmin", "admin"}).Find(&admins)
 
 	// Add event creator if not already in list
 	var creator models.User
@@ -275,11 +290,11 @@ func sendCheckInNotification(event models.Event, student models.User, checkInTim
 	}
 }
 
-// sendCheckOutNotification sends email to admin when student checks out
+// sendCheckOutNotification sends email to superadmin, admin, and event creator when student checks out
 func sendCheckOutNotification(event models.Event, student models.User, checkOutTime time.Time, status string) {
-	// Get admin emails (event creator and all admins/faculty)
+	// Get superadmin and admin emails
 	var admins []models.User
-	connection.DB.Where("role IN ?", []string{"superadmin", "admin", "faculty"}).Find(&admins)
+	connection.DB.Where("role IN ?", []string{"superadmin", "admin"}).Find(&admins)
 
 	// Add event creator if not already in list
 	var creator models.User

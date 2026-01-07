@@ -58,12 +58,7 @@ func GenerateSecureCode(length int) (string, error) {
 	return fmt.Sprintf(format, int(codeNum)), nil
 }
 
-// GenerateVerificationCode generates a 6-digit verification code
-func GenerateVerificationCode() string {
-	code, err := GenerateSecureCode(VerificationCodeLength)
-	if err != nil {
-		// Fallback should never happen, but handle it gracefully
-		panic(fmt.Sprintf("failed to generate verification code: %v", err))
-	}
-	return code
+// GenerateVerificationCode generates a 6-digit verification code or returns error
+func GenerateVerificationCode() (string, error) {
+	return GenerateSecureCode(VerificationCodeLength)
 }

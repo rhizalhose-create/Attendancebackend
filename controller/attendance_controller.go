@@ -11,6 +11,32 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// getUserAndCheckPermissions retrieves the user and checks if they can mark attendance for the given studentID
+func getUserAndCheckPermissions(c *fiber.Ctx, targetStudentID string) (models.User, error) {
+	// Get user from context
+	user, ok := c.Locals("user").(models.User)
+	if !ok {
+		studentID := c.Get(utils.HeaderStudentID)
+		if studentID == "" {
+			return models.User{}, fiber.NewError(401, utils.ErrUnauthorized)
+		}
+		var dbUser models.User
+		if err := connection.DB.Where("student_id = ?", studentID).First(&dbUser).Error; err != nil {
+			return models.User{}, fiber.NewError(401, utils.ErrUserNotFound)
+		}
+		user = dbUser
+	}
+
+	// Only allow marking own attendance unless admin/faculty
+	if targetStudentID != "" && targetStudentID != user.StudentID {
+		if user.Role != "superadmin" && user.Role != "admin" && user.Role != "faculty" {
+			return models.User{}, fiber.NewError(403, "You can only mark your own attendance")
+		}
+	}
+
+	return user, nil
+}
+
 // MarkAttendance marks attendance for a student (check-in or check-out)
 func MarkAttendance(c *fiber.Ctx) error {
 	req := new(models.AttendanceRequest)
@@ -26,30 +52,15 @@ func MarkAttendance(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "action is required. Use 'check_in' or 'check_out'"})
 	}
 
-	// Get user from context
-	user, ok := c.Locals("user").(models.User)
-	if !ok {
-		studentID := c.Get(utils.HeaderStudentID)
-		if studentID == "" {
-			return c.Status(401).JSON(fiber.Map{"error": utils.ErrUnauthorized})
-		}
-		var dbUser models.User
-		if err := connection.DB.Where("student_id = ?", studentID).First(&dbUser).Error; err != nil {
-			return c.Status(401).JSON(fiber.Map{"error": utils.ErrUserNotFound})
-		}
-		user = dbUser
+	// If studentID not provided, use current user (but we need to get user first)
+	user, err := getUserAndCheckPermissions(c, req.StudentID)
+	if err != nil {
+		return err
 	}
 
 	// If studentID not provided, use current user
 	if req.StudentID == "" {
 		req.StudentID = user.StudentID
-	}
-
-	// Only allow marking own attendance unless admin/faculty
-	if req.StudentID != user.StudentID {
-		if user.Role != "superadmin" && user.Role != "admin" && user.Role != "faculty" {
-			return c.Status(403).JSON(fiber.Map{"error": "You can only mark your own attendance"})
-		}
 	}
 
 	attendance, err := services.MarkAttendance(*req, user.StudentID, user.Role)

@@ -3,44 +3,54 @@ package middleware
 import (
 	"attendance-system/connection"
 	"attendance-system/models"
+	"attendance-system/services"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-// extractStudentID extracts student ID from Authorization header
-func extractStudentID(c *fiber.Ctx) (string, error) {
+// extractStudentID extracts student ID from Authorization header (supports both JWT and legacy Bearer format)
+func extractStudentID(c *fiber.Ctx) (string, string, error) {
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
 		// Try alternative header
 		authHeader = c.Get("X-Student-ID")
 		if authHeader == "" {
-			return "", fiber.NewError(fiber.StatusUnauthorized, "Authorization required")
+			return "", "", fiber.NewError(fiber.StatusUnauthorized, "Authorization required")
 		}
 		// Set as Bearer format for consistency
 		authHeader = "Bearer " + authHeader
 	}
 
-	// Extract StudentID from "Bearer {student_id}"
+	// Extract from "Bearer {token}"
 	parts := strings.Split(authHeader, " ")
-	var studentID string
+	var token string
 	if len(parts) == 2 && parts[0] == "Bearer" {
-		studentID = parts[1]
+		token = parts[1]
 	} else if len(parts) == 1 {
-		studentID = parts[0]
+		token = parts[0]
 	} else {
-		return "", fiber.NewError(fiber.StatusUnauthorized, "Invalid authorization format. Use: Bearer {student_id}")
+		return "", "", fiber.NewError(fiber.StatusUnauthorized, "Invalid authorization format. Use: Bearer {JWT_token}")
 	}
 
-	if studentID == "" {
-		return "", fiber.NewError(fiber.StatusUnauthorized, "Student ID is required")
+	if token == "" {
+		return "", "", fiber.NewError(fiber.StatusUnauthorized, "Token is required")
 	}
 
-	return studentID, nil
+	// Try JWT first
+	claims, err := services.VerifyAccessToken(token)
+	if err == nil {
+		// Valid JWT token
+		return claims.StudentID, claims.Role, nil
+	}
+
+	// Fallback: treat as legacy student ID format (for backward compatibility)
+	// This should be deprecated in future versions
+	return token, "", nil
 }
 
 func RequireSuperAdmin(c *fiber.Ctx) error {
-	studentID, err := extractStudentID(c)
+	studentID, _, err := extractStudentID(c)
 	if err != nil {
 		return err
 	}
@@ -49,14 +59,14 @@ func RequireSuperAdmin(c *fiber.Ctx) error {
 	var user models.User
 	if err := connection.DB.Where("student_id = ?", studentID).First(&user).Error; err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid credentials",
+			"error": "User not found",
 		})
 	}
 
 	// Check if user is superadmin
 	if user.Role != "superadmin" {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "Access denied",
+			"error": "Access denied - superadmin role required",
 		})
 	}
 
@@ -66,9 +76,9 @@ func RequireSuperAdmin(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-// RequireAuth - Basic authentication middleware (checks if user exists and is verified)
+// RequireAuth - JWT authentication middleware (checks if user exists and is verified)
 func RequireAuth(c *fiber.Ctx) error {
-	studentID, err := extractStudentID(c)
+	studentID, _, err := extractStudentID(c)
 	if err != nil {
 		return err
 	}
@@ -77,7 +87,7 @@ func RequireAuth(c *fiber.Ctx) error {
 	var user models.User
 	if err := connection.DB.Where("student_id = ?", studentID).First(&user).Error; err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid credentials",
+			"error": "User not found",
 		})
 	}
 

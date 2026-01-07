@@ -35,7 +35,10 @@ func RegisterService(req models.RegisterRequest) (string, error) {
 		return "", err
 	}
 
-	verificationCode := utils.GenerateVerificationCode()
+	verificationCode, err := utils.GenerateVerificationCode()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate verification code: %w", err)
+	}
 
 	_, err = createPendingUser(req, studentID, hashedPassword, verificationCode)
 	if err != nil {
@@ -43,8 +46,10 @@ func RegisterService(req models.RegisterRequest) (string, error) {
 	}
 
 	if err := sendVerificationEmail(req.Email, studentID, verificationCode); err != nil {
-		// Log error without exposing sensitive information
-		fmt.Printf("Failed to send verification email\n")
+		// Log error for debugging - include the actual error details
+		fmt.Printf("Failed to send verification email to %s: %v\n", req.Email, err)
+		// Note: We continue with registration even if email fails.
+		// In production, consider implementing an email retry mechanism or queue.
 	}
 
 	return studentID, nil
@@ -68,11 +73,6 @@ func validateRegistrationInput(req models.RegisterRequest) error {
 	// Validate student ID if provided
 	if req.StudentID != "" && !utils.ValidateStudentID(req.StudentID) {
 		return errors.New("invalid student ID format")
-	}
-
-	// Validate profile picture if provided
-	if req.ProfilePicture != "" && !utils.ValidateBase64Image(req.ProfilePicture) {
-		return errors.New("invalid profile picture format. Must be base64 encoded image (JPEG, PNG, GIF, or WebP)")
 	}
 
 	return nil
@@ -136,36 +136,7 @@ func checkEmailDuplicates(email string) error {
 	return nil
 }
 
-// validateAndProcessProfilePicture validates and processes base64 image
-func validateAndProcessProfilePicture(base64Image string) string {
-	// Validate format
-	if !utils.ValidateBase64Image(base64Image) {
-		return "" // Invalid format
-	}
-
-	// Limit size to 2MB (base64 is ~33% larger than binary)
-	// Typical base64 encoding increases size by ~33%
-	if len(base64Image) > 2800000 { // ~2MB base64 = ~1.5MB binary
-		return "" // Too large, reject
-	}
-
-	// In production, you should:
-	// 1. Decode and validate actual image format (JPEG, PNG)
-	// 2. Resize if too large (max 800x800 recommended)
-	// 3. Compress the image
-	// 4. Store in cloud storage (S3, Cloudinary) instead of database
-	// 5. Return URL instead of base64
-
-	return base64Image
-}
-
 func createPendingUser(req models.RegisterRequest, studentID, hashedPassword, verificationCode string) (*models.PendingUser, error) {
-	// Validate and process profile picture
-	profilePicture := ""
-	if req.ProfilePicture != "" {
-		profilePicture = validateAndProcessProfilePicture(req.ProfilePicture)
-	}
-
 	pending := &models.PendingUser{
 		StudentID:        studentID,
 		Email:            req.Email,
@@ -181,7 +152,6 @@ func createPendingUser(req models.RegisterRequest, studentID, hashedPassword, ve
 		College:          req.College,
 		ContactNumber:    req.ContactNumber,
 		Address:          req.Address,
-		ProfilePicture:   profilePicture,
 		VerificationCode: verificationCode,
 		ExpiresAt:        time.Now().Add(30 * time.Minute),
 	}
