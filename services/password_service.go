@@ -7,6 +7,7 @@ import (
 	"attendance-system/utils"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -75,12 +76,30 @@ func VerifyResetCode(email, code string) error {
 func ResetPasswordWithCode(email, code, newPassword string) error {
 	// Sanitize inputs
 	email = utils.SanitizeEmail(email)
-	code = utils.SanitizeString(code)
-
+	code = strings.TrimSpace(code) // Just trim, don't sanitize yet
+	
 	// Verify code first
 	var reset models.PasswordReset
 	if err := connection.DB.Where(codeQuery, email, code, false, time.Now()).First(&reset).Error; err != nil {
-		return errors.New("invalid or expired reset code")
+		// If direct match fails, try trimmed comparison
+		var allResets []models.PasswordReset
+		if err := connection.DB.Where("email = ? AND used = ? AND expires_at > ?", email, false, time.Now()).Find(&allResets).Error; err != nil {
+			return errors.New("invalid or expired reset code")
+		}
+		
+		// Check if any code matches (with trimming)
+		found := false
+		for _, r := range allResets {
+			if strings.TrimSpace(r.Code) == code {
+				reset = r
+				found = true
+				break
+			}
+		}
+		
+		if !found {
+			return errors.New("invalid or expired reset code")
+		}
 	}
 
 	// Hash new password
@@ -100,7 +119,7 @@ func ResetPasswordWithCode(email, code, newPassword string) error {
 		return fmt.Errorf("failed to update password: %v", err)
 	}
 
-	// Mark code as used
+	// Mark code as used - use the ID we found to ensure we update the correct record
 	if err := connection.DB.Model(&reset).Update("used", true).Error; err != nil {
 		// Log error without exposing sensitive information
 		fmt.Printf("Failed to mark code as used\n")

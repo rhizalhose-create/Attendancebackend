@@ -18,7 +18,7 @@ const (
 )
 
 // Sentinel error returned when a student is not allowed to enter a tagged event
-var ErrEventAccessDenied = errors.New("you are not allowed to enter this event")
+var ErrEventAccessDenied = errors.New("Not Authorized to scan QR Code")
 
 // MarkAttendance marks attendance for a student in an event (check-in or check-out)
 func MarkAttendance(req models.AttendanceRequest, markedBy, markedByRole string) (*models.Attendance, error) {
@@ -221,11 +221,12 @@ func createAttendanceRaw(att *models.Attendance) error {
 
 // enforceEventCourseAccess returns error when a student is not allowed to enter an event.
 // It strictly validates that the student's course matches the event's course requirements.
-// For students, course matching is MANDATORY if event has any course restrictions.
+// Students (regardless of who is marking) must have matching course. Admins/faculty skip this check.
 func enforceEventCourseAccess(event models.Event, student models.User, markedByRole string) error {
-	// Skip enforcement for faculty/admin
-	if markedByRole != "student" {
-		// admins/faculty bypass course restrictions
+	// Only students need to pass course validation
+	// Admins/faculty can mark anyone, but the STUDENT being marked must still match course requirements
+	if student.Role != "student" {
+		// Non-students (admins, faculty) don't have course restrictions
 		return nil
 	}
 
@@ -242,32 +243,35 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 	hasCourseRestriction := event.Course != ""
 	hasTaggedCourses := event.TaggedCoursesCSV != ""
 
-	// If event has ANY course restrictions, enforce them strictly
+	// If event has NO course restrictions, allow all students
 	if !hasCourseRestriction && !hasTaggedCourses {
-		// No restrictions, allow all students
 		return nil
 	}
 
 	// Check against main course field (PRIMARY check)
 	if hasCourseRestriction {
 		eventCourse := strings.ToUpper(strings.TrimSpace(event.Course))
-		if userCourse != eventCourse {
-			return ErrEventAccessDenied
-		}
-		// If main course matches and that's the only restriction, allow
-		if !hasTaggedCourses {
-			// Additional checks for year level and department if specified
+		if userCourse == eventCourse {
+			// Main course matches, now check year level and department if specified
 			if event.YearLevel != "" && strings.ToUpper(strings.TrimSpace(event.YearLevel)) != userYearLevel {
 				return ErrEventAccessDenied
 			}
 			if event.Department != "" && strings.ToUpper(strings.TrimSpace(event.Department)) != userDepartment {
 				return ErrEventAccessDenied
 			}
-			return nil
+			// If no tagged courses, main course match is sufficient
+			if !hasTaggedCourses {
+				return nil
+			}
+			// If tagged courses exist, we still need to check them
+		} else if !hasTaggedCourses {
+			// Main course doesn't match and no tagged courses, deny access
+			return ErrEventAccessDenied
 		}
+		// If main course doesn't match but tagged courses exist, continue to check tagged courses below
 	}
 
-	// Check against tagged courses CSV (SECONDARY check)
+	// Check against tagged courses CSV (if event has them)
 	if hasTaggedCourses {
 		parts := strings.Split(event.TaggedCoursesCSV, ",")
 		courseAllowed := false
@@ -280,22 +284,15 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 		if !courseAllowed {
 			return ErrEventAccessDenied
 		}
-	}
-
-	// Final validation: check year level if specified
-	if event.YearLevel != "" {
-		eventYearLevel := strings.ToUpper(strings.TrimSpace(event.YearLevel))
-		if userYearLevel != eventYearLevel {
+		
+		// Course is in tagged courses, now check year level and department if specified
+		if event.YearLevel != "" && strings.ToUpper(strings.TrimSpace(event.YearLevel)) != userYearLevel {
 			return ErrEventAccessDenied
 		}
-	}
-
-	// Final validation: check department if specified
-	if event.Department != "" {
-		eventDepartment := strings.ToUpper(strings.TrimSpace(event.Department))
-		if userDepartment != eventDepartment {
+		if event.Department != "" && strings.ToUpper(strings.TrimSpace(event.Department)) != userDepartment {
 			return ErrEventAccessDenied
 		}
+		return nil
 	}
 
 	return nil
