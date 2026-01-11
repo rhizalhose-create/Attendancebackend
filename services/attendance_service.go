@@ -85,7 +85,7 @@ func determineTimeStatus(actualTime time.Time, expectedTime time.Time, gracePeri
 }
 
 // applyCheckIn applies check-in logic to the attendance record
-// Students can check in starting 2 hours before event start until event ends
+// Students can check in starting 30 minutes before event start until event ends
 // Faculty/Admin can check in anytime (for setup/testing)
 func applyCheckIn(att *models.Attendance, now time.Time, event models.Event, student models.User, markedByRole string) error {
 	if att.CheckInTime != nil {
@@ -100,11 +100,11 @@ func applyCheckIn(att *models.Attendance, now time.Time, event models.Event, stu
 			return errors.New("event has ended more than 24 hours ago. Check-in is no longer allowed")
 		}
 	} else {
-		// Students: Allow check-in 2 hours before event start until event ends (real-time scanning)
-		earliestCheckIn := event.StartTime.Add(-2 * time.Hour)
+		// Students: Allow check-in 30 minutes before event start until event ends (real-time scanning)
+		earliestCheckIn := event.StartTime.Add(-30 * time.Minute)
 		if now.Before(earliestCheckIn) {
-			hoursUntilCheckIn := earliestCheckIn.Sub(now).Hours()
-			return fmt.Errorf("event check-in not yet available. Available in %.0f hours", hoursUntilCheckIn)
+			minutesUntilCheckIn := int(earliestCheckIn.Sub(now).Minutes())
+			return fmt.Errorf("event check-in not yet available. Available in %d minutes", minutesUntilCheckIn)
 		}
 
 		// Allow check-in until event actually ends (real-time scanning during event)
@@ -220,7 +220,8 @@ func createAttendanceRaw(att *models.Attendance) error {
 }
 
 // enforceEventCourseAccess returns error when a student is not allowed to enter an event.
-// It checks both the main Course field and TaggedCourses.
+// It strictly validates that the student's course matches the event's course requirements.
+// For students, course matching is MANDATORY if event has any course restrictions.
 func enforceEventCourseAccess(event models.Event, student models.User, markedByRole string) error {
 	// Skip enforcement for faculty/admin
 	if markedByRole != "student" {
@@ -228,27 +229,46 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 		return nil
 	}
 
+	// STRICT VALIDATION: Student must belong to a course
+	if student.Course == "" {
+		return errors.New("student course is not set. contact admin")
+	}
+
 	userCourse := strings.ToUpper(strings.TrimSpace(student.Course))
 	userYearLevel := strings.ToUpper(strings.TrimSpace(student.YearLevel))
 	userDepartment := strings.ToUpper(strings.TrimSpace(student.Department))
 
-	// Check if event has course restrictions (either main course or tagged courses)
-	eventHasRestrictions := event.Course != "" || event.TaggedCoursesCSV != ""
-	if !eventHasRestrictions {
+	// Determine event requirements
+	hasCourseRestriction := event.Course != ""
+	hasTaggedCourses := event.TaggedCoursesCSV != ""
+
+	// If event has ANY course restrictions, enforce them strictly
+	if !hasCourseRestriction && !hasTaggedCourses {
 		// No restrictions, allow all students
 		return nil
 	}
 
-	// Check against main course field
-	if event.Course != "" {
+	// Check against main course field (PRIMARY check)
+	if hasCourseRestriction {
 		eventCourse := strings.ToUpper(strings.TrimSpace(event.Course))
 		if userCourse != eventCourse {
 			return ErrEventAccessDenied
 		}
+		// If main course matches and that's the only restriction, allow
+		if !hasTaggedCourses {
+			// Additional checks for year level and department if specified
+			if event.YearLevel != "" && strings.ToUpper(strings.TrimSpace(event.YearLevel)) != userYearLevel {
+				return ErrEventAccessDenied
+			}
+			if event.Department != "" && strings.ToUpper(strings.TrimSpace(event.Department)) != userDepartment {
+				return ErrEventAccessDenied
+			}
+			return nil
+		}
 	}
 
-	// Check against tagged courses CSV
-	if event.TaggedCoursesCSV != "" {
+	// Check against tagged courses CSV (SECONDARY check)
+	if hasTaggedCourses {
 		parts := strings.Split(event.TaggedCoursesCSV, ",")
 		courseAllowed := false
 		for _, c := range parts {
@@ -262,7 +282,7 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 		}
 	}
 
-	// Check year level if specified
+	// Final validation: check year level if specified
 	if event.YearLevel != "" {
 		eventYearLevel := strings.ToUpper(strings.TrimSpace(event.YearLevel))
 		if userYearLevel != eventYearLevel {
@@ -270,7 +290,7 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 		}
 	}
 
-	// Check department if specified
+	// Final validation: check department if specified
 	if event.Department != "" {
 		eventDepartment := strings.ToUpper(strings.TrimSpace(event.Department))
 		if userDepartment != eventDepartment {
