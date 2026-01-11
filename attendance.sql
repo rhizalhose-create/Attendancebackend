@@ -78,8 +78,8 @@ CREATE TABLE IF NOT EXISTS events (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     event_date DATE NOT NULL,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
     location VARCHAR(255),
     course VARCHAR(100),
     section VARCHAR(50),
@@ -91,8 +91,9 @@ CREATE TABLE IF NOT EXISTS events (
     status VARCHAR(50) DEFAULT 'scheduled',
     is_active BOOLEAN DEFAULT TRUE,
     qr_code_data TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tagged_courses TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for events table

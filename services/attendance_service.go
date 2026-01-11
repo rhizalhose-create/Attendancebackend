@@ -100,11 +100,11 @@ func applyCheckIn(att *models.Attendance, now time.Time, event models.Event, stu
 			return errors.New("event has ended more than 24 hours ago. Check-in is no longer allowed")
 		}
 	} else {
-		// Students: Allow check-in 2 hours before event start until event ends (real-time scanning)
-		earliestCheckIn := event.StartTime.Add(-2 * time.Hour)
+		// Students: Allow check-in 30 minutes before event start until event ends (real-time scanning)
+		earliestCheckIn := event.StartTime.Add(-30 * time.Minute)
 		if now.Before(earliestCheckIn) {
-			hoursUntilCheckIn := earliestCheckIn.Sub(now).Hours()
-			return fmt.Errorf("event check-in not yet available. Available in %.0f hours", hoursUntilCheckIn)
+			minutesUntilCheckIn := earliestCheckIn.Sub(now).Minutes()
+			return fmt.Errorf("event check-in not yet available. Available in %.0f minutes", minutesUntilCheckIn)
 		}
 
 		// Allow check-in until event actually ends (real-time scanning during event)

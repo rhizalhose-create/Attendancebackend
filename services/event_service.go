@@ -3,6 +3,7 @@ package services
 
 import (
 	"attendance-system/connection"
+	"attendance-system/logging"
 	"attendance-system/models"
 	"encoding/base64"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/skip2/go-qrcode"
+	"go.uber.org/zap"
 )
 
 const (
@@ -27,6 +29,14 @@ func CreateEvent(req models.EventRequest, createdBy, createdByRole string) (*mod
 	if err != nil {
 		return nil, err
 	}
+
+	// Log the parsed times for debugging
+	logging.Logger.Info("Event times parsed",
+		zap.String("request_start", req.StartTime),
+		zap.String("request_end", req.EndTime),
+		zap.Time("parsed_start", startDateTime),
+		zap.Time("parsed_end", endDateTime),
+	)
 
 	// Generate QR code for event
 	qrCodeBase64, err := generateEventQRCode(createdBy)
@@ -96,26 +106,40 @@ func persistEvent(event *models.Event) error {
 
 // parseEventDateTimes parses EventDate, StartTime and EndTime from request and returns
 // the event date plus combined start and end datetimes.
+// Supports both HH:MM format (local time) and ISO 8601 format
 func parseEventDateTimes(req models.EventRequest) (time.Time, time.Time, time.Time, error) {
 	eventDate, err := time.Parse("2006-01-02", req.EventDate)
 	if err != nil {
 		return time.Time{}, time.Time{}, time.Time{}, errors.New("invalid event_date format. Use YYYY-MM-DD")
 	}
 
-	startTime, err := time.Parse("15:04", req.StartTime)
-	if err != nil {
-		return time.Time{}, time.Time{}, time.Time{}, errors.New("invalid start_time format. Use HH:MM")
+	// Try parsing start_time as ISO 8601 first, then fallback to HH:MM
+	var startDateTime time.Time
+	if t, err := time.Parse("2006-01-02T15:04:05Z07:00", req.StartTime); err == nil {
+		startDateTime = t
+	} else if t, err := time.Parse("2006-01-02T15:04:05", req.StartTime); err == nil {
+		startDateTime = t
+	} else if t, err := time.Parse("15:04", req.StartTime); err == nil {
+		// HH:MM format - combine with event date using local timezone
+		startDateTime = time.Date(eventDate.Year(), eventDate.Month(), eventDate.Day(),
+			t.Hour(), t.Minute(), 0, 0, time.Local)
+	} else {
+		return time.Time{}, time.Time{}, time.Time{}, errors.New("invalid start_time format. Use HH:MM, YYYY-MM-DDTHH:MM:SS, or ISO 8601")
 	}
 
-	endTime, err := time.Parse("15:04", req.EndTime)
-	if err != nil {
-		return time.Time{}, time.Time{}, time.Time{}, errors.New("invalid end_time format. Use HH:MM")
+	// Try parsing end_time as ISO 8601 first, then fallback to HH:MM
+	var endDateTime time.Time
+	if t, err := time.Parse("2006-01-02T15:04:05Z07:00", req.EndTime); err == nil {
+		endDateTime = t
+	} else if t, err := time.Parse("2006-01-02T15:04:05", req.EndTime); err == nil {
+		endDateTime = t
+	} else if t, err := time.Parse("15:04", req.EndTime); err == nil {
+		// HH:MM format - combine with event date using local timezone
+		endDateTime = time.Date(eventDate.Year(), eventDate.Month(), eventDate.Day(),
+			t.Hour(), t.Minute(), 0, 0, time.Local)
+	} else {
+		return time.Time{}, time.Time{}, time.Time{}, errors.New("invalid end_time format. Use HH:MM, YYYY-MM-DDTHH:MM:SS, or ISO 8601")
 	}
-
-	startDateTime := time.Date(eventDate.Year(), eventDate.Month(), eventDate.Day(),
-		startTime.Hour(), startTime.Minute(), 0, 0, time.Local)
-	endDateTime := time.Date(eventDate.Year(), eventDate.Month(), eventDate.Day(),
-		endTime.Hour(), endTime.Minute(), 0, 0, time.Local)
 
 	if endDateTime.Before(startDateTime) || endDateTime.Equal(startDateTime) {
 		return time.Time{}, time.Time{}, time.Time{}, errors.New("end_time must be after start_time")
