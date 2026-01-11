@@ -9,78 +9,107 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const (
-	failedFetchUserProfile    = "failed to fetch user profile"
-	errorFailedGenerateAccessToken = "failed to generate access token"
-	errorInvalidRequest       = "invalid request"
-)
-
 func Login(c *fiber.Ctx) error {
 	req := new(models.LoginRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": errorInvalidRequest})
+		return c.Status(400).JSON(fiber.Map{"error": models.ErrInvalidRequest})
 	}
 
-	// Fetch user profile so caller gets the current role immediately
+	if req.StudentID == "" || req.Password == "" {
+		return c.Status(400).JSON(fiber.Map{"error": models.ErrFieldsRequired})
+	}
+
+	// Fetch user profile
 	// Determine lookup key (email vs student id)
 	var user models.User
 	if strings.Contains(req.StudentID, "@") {
 		// login by email
 		if err := services.GetUserByEmail(req.StudentID, &user); err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
+			return c.Status(401).JSON(fiber.Map{"error": models.ErrInvalidCredentials})
 		}
 	} else {
 		sid := utils.SanitizeStudentID(req.StudentID)
 		if err := services.GetUserByStudentID(sid, &user); err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
+			return c.Status(401).JSON(fiber.Map{"error": models.ErrInvalidStudentID})
 		}
 	}
 
+	// Verify password
+	if err := utils.ComparePassword(user.Password, req.Password); err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": models.ErrInvalidStudentID})
+	}
+
+	// Check if verified
+	if !user.IsVerified {
+		return c.Status(403).JSON(fiber.Map{"error": models.ErrEmailNotVerified})
+	}
+
+	accessToken, err := services.GenerateAccessToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": models.ErrFailedGenerateAccessToken})
+	}
+
+	refreshToken, err := services.GenerateRefreshToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": models.ErrFailedGenerateRefreshToken})
+	}
+
 	return c.JSON(fiber.Map{
-		"message":    "Login successful",
-		"student_id": user.StudentID,
-		"role":       user.Role,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
+		"message":       models.SuccessLoginFacultyAdmin,
+		"student_id":    user.StudentID,
+		"email":         user.Email,
+		"role":          user.Role,
+		"first_name":    user.FirstName,
+		"last_name":     user.LastName,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
-// Optional: Add login by email endpoint
+// LoginByEmail adds login by email endpoint
 func LoginByEmail(c *fiber.Ctx) error {
 	type EmailLoginRequest struct {
-		Email          string `json:"email"`
-		Password       string `json:"password"`
-		RecaptchaToken string `json:"recaptcha_token,omitempty"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	req := new(EmailLoginRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": errorInvalidRequest})
+		return c.Status(400).JSON(fiber.Map{"error": models.ErrInvalidRequest})
+	}
+
+	if req.Email == "" || req.Password == "" {
+		return c.Status(400).JSON(fiber.Map{"error": models.ErrEmailPasswordRequired})
 	}
 
 	// Get user by email
 	var user models.User
 	if err := services.GetUserByEmail(req.Email, &user); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": failedFetchUserProfile})
+		return c.Status(401).JSON(fiber.Map{"error": models.ErrInvalidCredentials})
 	}
 
-	// TODO: Add password verification here
-	// if !services.VerifyPassword(req.Password, user.PasswordHash) {
-	//     return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
-	// }
+	// Verify password
+	if err := utils.ComparePassword(user.Password, req.Password); err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": models.ErrInvalidCredentials})
+	}
+
+	// Check if verified
+	if !user.IsVerified {
+		return c.Status(403).JSON(fiber.Map{"error": models.ErrEmailNotVerified})
+	}
 
 	accessToken, err := services.GenerateAccessToken(user)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": errorFailedGenerateAccessToken})
+		return c.Status(500).JSON(fiber.Map{"error": models.ErrFailedGenerateAccessToken})
 	}
 
 	refreshToken, err := services.GenerateRefreshToken(user)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate refresh token"})
+		return c.Status(500).JSON(fiber.Map{"error": models.ErrFailedGenerateRefreshToken})
 	}
 
 	return c.JSON(fiber.Map{
-		"message":       "Login successful",
+		"message":       models.SuccessLoginFacultyAdmin,
 		"email":         user.Email,
 		"student_id":    user.StudentID,
 		"role":          user.Role,
@@ -99,33 +128,33 @@ func RefreshToken(c *fiber.Ctx) error {
 
 	req := new(RefreshRequest)
 	if err := c.BodyParser(req); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": errorInvalidRequest})
+		return c.Status(400).JSON(fiber.Map{"error": models.ErrInvalidRequest})
 	}
 
 	if req.RefreshToken == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "refresh_token is required"})
+		return c.Status(400).JSON(fiber.Map{"error": models.ErrTokenRequired})
 	}
 
 	// Verify refresh token
 	claims, err := services.VerifyRefreshToken(req.RefreshToken)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired refresh token"})
+		return c.Status(401).JSON(fiber.Map{"error": models.ErrRefreshTokenExpired})
 	}
 
 	// Get user
 	var user models.User
 	if err := services.GetUserByStudentID(claims.StudentID, &user); err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+		return c.Status(404).JSON(fiber.Map{"error": models.ErrUserNotFound})
 	}
 
 	// Generate new access token
 	accessToken, err := services.GenerateAccessToken(user)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": errorFailedGenerateAccessToken})
+		return c.Status(500).JSON(fiber.Map{"error": models.ErrFailedGenerateAccessToken})
 	}
 
 	return c.JSON(fiber.Map{
-		"message":      "Token refreshed successfully",
+		"message":      models.SuccessTokenRefreshed,
 		"access_token": accessToken,
 	})
 }
@@ -135,10 +164,11 @@ func GetProfile(c *fiber.Ctx) error {
 	// Get user from context (set by RequireAuth middleware)
 	user, ok := c.Locals("user").(models.User)
 	if !ok {
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+		return c.Status(401).JSON(fiber.Map{"error": models.ErrUnauthorized})
 	}
 
 	return c.JSON(fiber.Map{
+		"message":    models.SuccessProfileFetched,
 		"student_id": user.StudentID,
 		"email":      user.Email,
 		"role":       user.Role,

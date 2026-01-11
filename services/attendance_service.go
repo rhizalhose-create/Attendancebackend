@@ -219,36 +219,63 @@ func createAttendanceRaw(att *models.Attendance) error {
 	return nil
 }
 
-// enforceEventCourseAccess returns error when a student is not allowed to enter a tagged event.
+// enforceEventCourseAccess returns error when a student is not allowed to enter an event.
+// It checks both the main Course field and TaggedCourses.
 func enforceEventCourseAccess(event models.Event, student models.User, markedByRole string) error {
-	if event.TaggedCoursesCSV == "" {
-		return nil
-	}
+	// Skip enforcement for faculty/admin
 	if markedByRole != "student" {
-		// admins/faculty bypass
+		// admins/faculty bypass course restrictions
 		return nil
 	}
 
-	parts := strings.Split(event.TaggedCoursesCSV, ",")
 	userCourse := strings.ToUpper(strings.TrimSpace(student.Course))
 	userYearLevel := strings.ToUpper(strings.TrimSpace(student.YearLevel))
+	userDepartment := strings.ToUpper(strings.TrimSpace(student.Department))
 
-	// Check if student's course matches any tagged course
-	courseAllowed := false
-	for _, c := range parts {
-		if strings.ToUpper(strings.TrimSpace(c)) == userCourse {
-			courseAllowed = true
-			break
+	// Check if event has course restrictions (either main course or tagged courses)
+	eventHasRestrictions := event.Course != "" || event.TaggedCoursesCSV != ""
+	if !eventHasRestrictions {
+		// No restrictions, allow all students
+		return nil
+	}
+
+	// Check against main course field
+	if event.Course != "" {
+		eventCourse := strings.ToUpper(strings.TrimSpace(event.Course))
+		if userCourse != eventCourse {
+			return ErrEventAccessDenied
 		}
 	}
 
-	if !courseAllowed {
-		return ErrEventAccessDenied
+	// Check against tagged courses CSV
+	if event.TaggedCoursesCSV != "" {
+		parts := strings.Split(event.TaggedCoursesCSV, ",")
+		courseAllowed := false
+		for _, c := range parts {
+			if strings.ToUpper(strings.TrimSpace(c)) == userCourse {
+				courseAllowed = true
+				break
+			}
+		}
+		if !courseAllowed {
+			return ErrEventAccessDenied
+		}
 	}
 
-	// If event specifies year level, also check year level
-	if event.YearLevel != "" && strings.ToUpper(strings.TrimSpace(event.YearLevel)) != userYearLevel {
-		return ErrEventAccessDenied
+	// Check year level if specified
+	if event.YearLevel != "" {
+		eventYearLevel := strings.ToUpper(strings.TrimSpace(event.YearLevel))
+		if userYearLevel != eventYearLevel {
+			return ErrEventAccessDenied
+		}
+	}
+
+	// Check department if specified
+	if event.Department != "" {
+		eventDepartment := strings.ToUpper(strings.TrimSpace(event.Department))
+		if userDepartment != eventDepartment {
+			return ErrEventAccessDenied
+		}
 	}
 
 	return nil

@@ -31,7 +31,6 @@ type Attendance struct {
 	CheckInStatus  string     `json:"check_in_status,omitempty" gorm:"type:varchar(50)"`  // early, on_time, late
 	CheckOutStatus string     `json:"check_out_status,omitempty" gorm:"type:varchar(50)"` // early, on_time, late
 
-
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
@@ -42,15 +41,14 @@ type Attendance struct {
 
 // AttendanceRequest for marking attendance
 type AttendanceRequest struct {
-	EventID        uint    `json:"event_id"`
-	StudentID      string  `json:"student_id,omitempty"`
-	Status         string  `json:"status,omitempty"`
-	Method         string  `json:"method,omitempty"`
-	Action         string  `json:"action"`
-	Latitude       float64 `json:"latitude,omitempty"`
-	Longitude      float64 `json:"longitude,omitempty"`
-	Notes          string  `json:"notes,omitempty"`
-	RecaptchaToken string  `json:"recaptcha_token,omitempty"`
+	EventID   uint    `json:"event_id"`
+	StudentID string  `json:"student_id,omitempty"`
+	Status    string  `json:"status,omitempty"`
+	Method    string  `json:"method,omitempty"`
+	Action    string  `json:"action"`
+	Latitude  float64 `json:"latitude,omitempty"`
+	Longitude float64 `json:"longitude,omitempty"`
+	Notes     string  `json:"notes,omitempty"`
 }
 
 // AttendanceStats for reporting
