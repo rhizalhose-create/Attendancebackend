@@ -30,9 +30,15 @@ func ForgotPassword(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": ErrEmailRequired})
 	}
 
-	// Always return success (security), but get token
+	// Always return success (security), but get token if email exists
 	_, token, err := services.ForgotPassword(req.Email)
 	if err != nil {
+		// Still return success message for security, but with empty token
+		return c.JSON(fiber.Map{
+			"message": SuccessResetCodeSent,
+			"status":  "success",
+			"token":   "",
+		})
 	}
 
 	return c.JSON(fiber.Map{
@@ -45,7 +51,7 @@ func ForgotPassword(c *fiber.Ctx) error {
 // VerifyResetCode verifies the reset code using bearer token
 // Request Header: Authorization: Bearer <token_from_forgot_password>
 // Request: { "code": "123456" }  <- code received in email
-// Response: { "message": "Code is valid", "status": "success" }
+// Response: { "message": "Code is valid", "status": "success", "token": "new_token_for_reset_password" }
 func VerifyResetCode(c *fiber.Ctx) error {
 	type VerifyRequest struct {
 		Code string `json:"code"`
@@ -86,12 +92,17 @@ func VerifyResetCode(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired code"})
 	}
 
-	// Code is valid
+	// Code is valid - generate a new token for /reset-password endpoint
+	newToken, err := services.GeneratePasswordResetToken(claims.Email, req.Code)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate token"})
+	}
+
 	return c.JSON(fiber.Map{
 		"message": SuccessCodeValid,
 		"status":  "success",
 		"email":   claims.Email,
-		"token":   auth[len("Bearer "):], // Return the same token for /reset-password
+		"token":   newToken,
 	})
 }
 
