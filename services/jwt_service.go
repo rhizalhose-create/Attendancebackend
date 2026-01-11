@@ -15,9 +15,9 @@ type JWTClaims = models.JWTClaims
 type RefreshTokenClaims = models.RefreshTokenClaims
 
 var (
-	ErrNoSecretKey   = models.ErrNoSecretKey
-	ErrInvalidToken  = models.ErrInvalidToken
-	AccessTokenExpiry = models.AccessTokenExpiry
+	ErrNoSecretKey     = models.ErrNoSecretKey
+	ErrInvalidToken    = models.ErrInvalidToken
+	AccessTokenExpiry  = models.AccessTokenExpiry
 	RefreshTokenExpiry = models.RefreshTokenExpiry
 )
 
@@ -127,6 +127,108 @@ func VerifyRefreshToken(tokenString string) (*RefreshTokenClaims, error) {
 	}
 
 	claims, ok := token.Claims.(*RefreshTokenClaims)
+	if !ok || !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	return claims, nil
+}
+
+// GeneratePasswordResetToken creates a JWT token for password reset verification
+func GeneratePasswordResetToken(email, code string) (string, error) {
+	if jwtSecret == "" {
+		return "", ErrNoSecretKey
+	}
+
+	claims := models.PasswordResetTokenClaims{
+		Email: email,
+		Code:  code,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(models.PasswordResetTokenExpiry)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Subject:   email,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(jwtSecret))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign password reset token: %w", err)
+	}
+
+	return tokenString, nil
+}
+
+// VerifyPasswordResetToken verifies and parses a password reset token
+func VerifyPasswordResetToken(tokenString string) (*models.PasswordResetTokenClaims, error) {
+	if tokenString == "" {
+		return nil, ErrInvalidToken
+	}
+
+	token, err := jwt.ParseWithClaims(tokenString, &models.PasswordResetTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
+
+	claims, ok := token.Claims.(*models.PasswordResetTokenClaims)
+	if !ok || !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	return claims, nil
+}
+
+// GenerateEmailVerificationToken creates a JWT token for email verification
+func GenerateEmailVerificationToken(email, code string) (string, error) {
+	if jwtSecret == "" {
+		return "", ErrNoSecretKey
+	}
+
+	claims := models.EmailVerificationTokenClaims{
+		Email: email,
+		Code:  code,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(models.EmailVerificationTokenExpiry)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Subject:   email,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(jwtSecret))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign email verification token: %w", err)
+	}
+
+	return tokenString, nil
+}
+
+// VerifyEmailVerificationToken verifies and parses an email verification token
+func VerifyEmailVerificationToken(tokenString string) (*models.EmailVerificationTokenClaims, error) {
+	if tokenString == "" {
+		return nil, ErrInvalidToken
+	}
+
+	token, err := jwt.ParseWithClaims(tokenString, &models.EmailVerificationTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
+
+	claims, ok := token.Claims.(*models.EmailVerificationTokenClaims)
 	if !ok || !token.Valid {
 		return nil, ErrInvalidToken
 	}

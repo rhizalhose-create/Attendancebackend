@@ -16,7 +16,7 @@ const (
 	codeQuery  = "email = ? AND code = ? AND used = ? AND expires_at > ?"
 )
 
-func ForgotPassword(email string) (string, error) {
+func ForgotPassword(email string) (string, string, error) {
 	// Sanitize input
 	email = utils.SanitizeEmail(email)
 
@@ -24,13 +24,13 @@ func ForgotPassword(email string) (string, error) {
 	var user models.User
 	if err := connection.DB.Where(emailQuery, email).First(&user).Error; err != nil {
 		// For security, don't reveal if email exists
-		return "", nil
+		return "", "", nil
 	}
 
 	// Generate secure 6-digit code using crypto/rand
 	code, err := utils.GenerateVerificationCode()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate verification code: %w", err)
+		return "", "", fmt.Errorf("failed to generate verification code: %w", err)
 	}
 
 	// Save to password_resets table
@@ -42,7 +42,7 @@ func ForgotPassword(email string) (string, error) {
 	}
 
 	if err := connection.DB.Omit("id").Create(&reset).Error; err != nil {
-		return "", fmt.Errorf("failed to create reset record: %v", err)
+		return "", "", fmt.Errorf("failed to create reset record: %v", err)
 	}
 
 	// Send email with code
@@ -61,12 +61,36 @@ func ForgotPassword(email string) (string, error) {
 		fmt.Printf("Failed to send reset email to %s: %v\n", email, err)
 	}
 
-	return code, nil
+	// Generate a JWT token for accessing verify/reset endpoints
+	jwtToken, err := GeneratePasswordResetToken(email, code)
+	if err != nil {
+		fmt.Printf("Failed to generate password reset token: %v\n", err)
+		return code, "", nil // Return code but no token if JWT generation fails
+	}
+
+	return code, jwtToken, nil
 }
 
-func VerifyResetCode(email, code string) error {
+// VerifyResetCode verifies the reset code and returns a JWT token for password reset
+func VerifyResetCode(code string) (string, string, error) {
 	var reset models.PasswordReset
-	if err := connection.DB.Where(codeQuery, email, code, false, time.Now()).First(&reset).Error; err != nil {
+	if err := connection.DB.Where("code = ? AND used = ? AND expires_at > ?", code, false, time.Now()).First(&reset).Error; err != nil {
+		return "", "", errors.New("invalid or expired reset code")
+	}
+
+	// Generate JWT token
+	jwtToken, err := GeneratePasswordResetToken(reset.Email, code)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate token: %v", err)
+	}
+
+	return reset.Email, jwtToken, nil
+}
+
+// VerifyResetCodeDB checks if the reset code is valid in database
+func VerifyResetCodeDB(email, code string) error {
+	var reset models.PasswordReset
+	if err := connection.DB.Where("email = ? AND code = ? AND used = ? AND expires_at > ?", email, code, false, time.Now()).First(&reset).Error; err != nil {
 		return errors.New("invalid or expired reset code")
 	}
 	return nil
@@ -122,7 +146,7 @@ func ResetPasswordWithCode(email, code, newPassword string) error {
 }
 
 // Resend reset code
-func ResendResetCode(email string) (string, error) {
+func ResendResetCode(email string) (string, string, error) {
 	// Delete any existing unused codes for this email
 	connection.DB.Where("email = ? AND used = ?", email, false).Delete(&models.PasswordReset{})
 

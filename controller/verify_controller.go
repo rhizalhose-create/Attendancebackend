@@ -3,8 +3,10 @@ package controller
 import (
 	"attendance-system/connection"
 	"attendance-system/models"
+	"attendance-system/services"
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,23 +14,48 @@ import (
 )
 
 func VerifyEmail(c *fiber.Ctx) error {
+	// Extract Bearer token from Authorization header
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(401).JSON(fiber.Map{"error": "Authorization header is required"})
+	}
+
+	// Extract token from "Bearer <token>" format
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid authorization header format"})
+	}
+
+	token := parts[1]
+
+	// Verify the token
+	claims, err := services.VerifyEmailVerificationToken(token)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired token"})
+	}
+
+	// Parse request body - only code should be provided
 	var req struct {
-		Email string `json:"email"`
-		Code  string `json:"code"`
+		Code string `json:"code"`
 	}
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	if req.Email == "" || req.Code == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "Email and code are required"})
+	if req.Code == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Code is required"})
 	}
 
-	// Find pending user by email and verification code
-	var pending models.PendingUser
-	if err := connection.DB.Where("email = ? AND verification_code = ?", req.Email, req.Code).First(&pending).Error; err != nil {
+	// Verify the code matches the token claims
+	if strings.TrimSpace(req.Code) != strings.TrimSpace(claims.Code) {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid verification code"})
+	}
+
+	// Find pending user by email
+	var pending models.PendingUser
+	if err := connection.DB.Where("email = ?", claims.Email).First(&pending).Error; err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Registration not found"})
 	}
 
 	// Check if code expired
@@ -79,7 +106,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 	connection.DB.Delete(&pending)
 
 	return c.JSON(fiber.Map{
-		"message": "Verify email successful",
+		"message": "Email verification successful",
 		"status":  "success",
 	})
 }

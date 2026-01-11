@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func RegisterService(req models.RegisterRequest) (string, error) {
+func RegisterService(req models.RegisterRequest) (string, string, error) {
 	// Sanitize inputs
 	req.Email = utils.SanitizeEmail(req.Email)
 	if req.StudentID != "" {
@@ -18,31 +18,31 @@ func RegisterService(req models.RegisterRequest) (string, error) {
 	}
 
 	if err := validateRegistrationInput(req); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	studentID, err := generateOrValidateStudentID(req.StudentID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if err := checkEmailDuplicates(req.Email); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	verificationCode, err := utils.GenerateVerificationCode()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate verification code: %w", err)
+		return "", "", fmt.Errorf("failed to generate verification code: %w", err)
 	}
 
 	_, err = createPendingUser(req, studentID, hashedPassword, verificationCode)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if err := sendVerificationEmail(req.Email, studentID, verificationCode); err != nil {
@@ -50,7 +50,13 @@ func RegisterService(req models.RegisterRequest) (string, error) {
 		fmt.Printf("Failed to send verification email\n")
 	}
 
-	return studentID, nil
+	// Generate email verification token
+	token, err := GenerateEmailVerificationToken(req.Email, verificationCode)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate verification token: %w", err)
+	}
+
+	return studentID, token, nil
 }
 
 func validateRegistrationInput(req models.RegisterRequest) error {

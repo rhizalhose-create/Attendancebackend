@@ -18,7 +18,7 @@ func Register(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Email, password, first name, and last name are required"})
 	}
 
-	studentID, err := services.RegisterService(req)
+	studentID, token, err := services.RegisterService(req)
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -26,6 +26,7 @@ func Register(c *fiber.Ctx) error {
 	return c.Status(201).JSON(fiber.Map{
 		"message":    "Registration successful. Please check your email to verify your account.",
 		"student_id": studentID,
+		"token":      token,
 		"status":     "success",
 	})
 }
