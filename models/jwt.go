@@ -1,11 +1,16 @@
-// JWTClaims contains JWT token claims with expiration
+// models/jwt.go
+// JWT token claims and configuration
+
 package models
+
 import (
 	"errors"
 	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// JWTClaims contains JWT token claims with expiration
 type JWTClaims struct {
 	StudentID string `json:"student_id"`
 	Email     string `json:"email"`
@@ -27,6 +32,7 @@ const (
 )
 
 var (
+	// JWT Errors
 	ErrInvalidToken = errors.New("invalid or expired token")
 	ErrNoSecretKey  = errors.New("JWT_SECRET not configured")
 )

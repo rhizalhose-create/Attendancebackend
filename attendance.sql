@@ -15,9 +15,15 @@ CREATE TABLE users (
     contact_number VARCHAR(20),
     address TEXT,
     qr_code_data TEXT,
+    qr_type VARCHAR(50) DEFAULT 'student_id',
+    qr_generated_at TIMESTAMP,
     role VARCHAR(50) NOT NULL DEFAULT 'student',
     is_verified BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    verified_at TIMESTAMP,
+    active_event_id INTEGER,
+    original_qr_code_data TEXT,
+    original_qr_type VARCHAR(50)
 );
 
 

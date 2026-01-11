@@ -126,3 +126,167 @@ attendance-system/services.LogAuditAction
 2026-01-11 14:50:07	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/events", "status": 200, "duration": "1.5753ms"}
 2026-01-11 14:50:29	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/events", "status": 201, "duration": "15.9573ms"}
 2026-01-11 14:50:30	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/events", "status": 200, "duration": "2.2927ms"}
+2026-01-11 15:02:34	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "265.2982ms"}
+2026-01-11 15:03:22	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "290.5203ms"}
+2026-01-11 15:04:55	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "251.4454ms"}
+2026-01-11 15:04:58	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "247.1043ms"}
+2026-01-11 15:05:28	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "245.4987ms"}
+2026-01-11 15:08:39	ERROR	services/mail_service.go:44	Failed to send email to tazamandy@gmail.com: 535 5.7.8 Username and Password not accepted. For more information, go to
+5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-81efe4a95c7sm4198108b3a.37 - gsmtp
+attendance-system/services.SendEmail
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/mail_service.go:44
+attendance-system/services.sendVerificationEmail
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/registration_service.go:176
+attendance-system/services.RegisterService
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/registration_service.go:48
+attendance-system/controller.Register
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/controller/register_controller.go:21
+github.com/gofiber/fiber/v2.(*App).next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:143
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1042
+main.main.RequestLogger.func4
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/logging.go:26
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+github.com/gofiber/fiber/v2/middleware/cors.checkOutsideCORS
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/middleware/cors/cors.go:185
+github.com/gofiber/fiber/v2/middleware/cors.New.createCorsHandler.func1
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/middleware/cors/cors.go:132
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+attendance-system/middleware.RateLimit
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/rate_limit.go:42
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+attendance-system/middleware.SecurityHeaders
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/security.go:25
+github.com/gofiber/fiber/v2.(*App).next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:143
+github.com/gofiber/fiber/v2.(*App).handler
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:170
+github.com/valyala/fasthttp.(*Server).serveConn
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/server.go:2359
+github.com/valyala/fasthttp.(*workerPool).workerFunc
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/workerpool.go:224
+github.com/valyala/fasthttp.(*workerPool).getCh.func1
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/workerpool.go:196
+2026-01-11 15:08:40	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 201, "duration": "3.2326563s"}
+2026-01-11 15:11:19	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "4.6902ms"}
+2026-01-11 15:12:26	ERROR	services/mail_service.go:44	Failed to send email to tazamandy@gmail.com: 535 5.7.8 Username and Password not accepted. For more information, go to
+5.7.8  https://support.google.com/mail/?p=BadCredentials 41be03b00d2f7-c4cbf28ebe4sm14419674a12.4 - gsmtp
+attendance-system/services.SendEmail
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/mail_service.go:44
+attendance-system/services.sendVerificationEmail
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/registration_service.go:176
+attendance-system/services.RegisterService
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/registration_service.go:48
+attendance-system/controller.Register
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/controller/register_controller.go:21
+github.com/gofiber/fiber/v2.(*App).next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:143
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1042
+main.main.RequestLogger.func4
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/logging.go:26
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+github.com/gofiber/fiber/v2/middleware/cors.checkOutsideCORS
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/middleware/cors/cors.go:185
+github.com/gofiber/fiber/v2/middleware/cors.New.createCorsHandler.func1
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/middleware/cors/cors.go:132
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+attendance-system/middleware.RateLimit
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/rate_limit.go:50
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+attendance-system/middleware.SecurityHeaders
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/security.go:25
+github.com/gofiber/fiber/v2.(*App).next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:143
+github.com/gofiber/fiber/v2.(*App).handler
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:170
+github.com/valyala/fasthttp.(*Server).serveConn
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/server.go:2359
+github.com/valyala/fasthttp.(*workerPool).workerFunc
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/workerpool.go:224
+github.com/valyala/fasthttp.(*workerPool).getCh.func1
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/workerpool.go:196
+2026-01-11 15:12:26	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 201, "duration": "2.6502914s"}
+2026-01-11 15:12:57	ERROR	services/mail_service.go:44	Failed to send email to myzcent04@gmail.com: 535 5.7.8 Username and Password not accepted. For more information, go to
+5.7.8  https://support.google.com/mail/?p=BadCredentials 98e67ed59e1d1-34f5fb74435sm14595564a91.14 - gsmtp
+attendance-system/services.SendEmail
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/mail_service.go:44
+attendance-system/services.sendVerificationEmail
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/registration_service.go:176
+attendance-system/services.RegisterService
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/services/registration_service.go:48
+attendance-system/controller.Register
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/controller/register_controller.go:21
+github.com/gofiber/fiber/v2.(*App).next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:143
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1042
+main.main.RequestLogger.func4
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/logging.go:26
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+github.com/gofiber/fiber/v2/middleware/cors.checkOutsideCORS
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/middleware/cors/cors.go:185
+github.com/gofiber/fiber/v2/middleware/cors.New.createCorsHandler.func1
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/middleware/cors/cors.go:132
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+attendance-system/middleware.RateLimit
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/rate_limit.go:65
+github.com/gofiber/fiber/v2.(*Ctx).Next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/ctx.go:1039
+attendance-system/middleware.SecurityHeaders
+	C:/Users/myzce/Downloads/Attendancebackend-dev1/middleware/security.go:25
+github.com/gofiber/fiber/v2.(*App).next
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:143
+github.com/gofiber/fiber/v2.(*App).handler
+	C:/Users/myzce/go/pkg/mod/github.com/gofiber/fiber/v2@v2.52.10/router.go:170
+github.com/valyala/fasthttp.(*Server).serveConn
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/server.go:2359
+github.com/valyala/fasthttp.(*workerPool).workerFunc
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/workerpool.go:224
+github.com/valyala/fasthttp.(*workerPool).getCh.func1
+	C:/Users/myzce/go/pkg/mod/github.com/valyala/fasthttp@v1.51.0/workerpool.go:196
+2026-01-11 15:12:57	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 201, "duration": "2.5726469s"}
+2026-01-11 15:14:53	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/health", "status": 200, "duration": "0s"}
+2026-01-11 15:15:07	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/health", "status": 200, "duration": "0s"}
+2026-01-11 15:17:03	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 201, "duration": "4.8880878s"}
+2026-01-11 15:18:56	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify-email", "status": 200, "duration": "0s"}
+2026-01-11 15:23:13	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify-email", "status": 200, "duration": "0s"}
+2026-01-11 15:23:15	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify-email", "status": 200, "duration": "0s"}
+2026-01-11 15:23:33	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify-email", "status": 200, "duration": "0s"}
+2026-01-11 15:23:45	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify-email", "status": 401, "duration": "4.8587ms"}
+2026-01-11 15:24:13	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "6.5611ms"}
+2026-01-11 15:24:16	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 400, "duration": "3.725ms"}
+2026-01-11 15:24:25	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 201, "duration": "2.9417832s"}
+2026-01-11 15:24:44	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify-email", "status": 401, "duration": "1.0315ms"}
+2026-01-11 15:24:47	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify-email", "status": 401, "duration": "1.0507ms"}
+2026-01-11 15:25:41	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify", "status": 500, "duration": "9.2112ms"}
+2026-01-11 15:26:05	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 201, "duration": "2.939146s"}
+2026-01-11 15:26:25	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify", "status": 500, "duration": "6.333ms"}
+2026-01-11 15:30:41	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/register", "status": 201, "duration": "3.4178579s"}
+2026-01-11 15:30:57	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/verify", "status": 200, "duration": "12.6382ms"}
+2026-01-11 15:31:41	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/login", "status": 500, "duration": "3.127ms"}
+2026-01-11 15:31:56	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/profile", "status": 200, "duration": "0s"}
+2026-01-11 15:35:10	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/login", "status": 200, "duration": "2.791ms"}
+2026-01-11 15:36:14	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/forgot-password", "status": 200, "duration": "3.6123953s"}
+2026-01-11 15:36:53	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/reset-password", "status": 400, "duration": "0s"}
+2026-01-11 15:37:06	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/reset-password", "status": 200, "duration": "3.9237622s"}
+2026-01-11 15:39:16	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/forgot-password", "status": 200, "duration": "2.8832493s"}
+2026-01-11 15:40:07	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "POST", "path": "/resend-reset-code", "status": 200, "duration": "3.4692861s"}
+2026-01-11 15:42:59	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/profile", "status": 200, "duration": "0s"}
+2026-01-11 15:43:49	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/login", "status": 200, "duration": "1.4446ms"}
+2026-01-11 15:51:29	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/login", "status": 401, "duration": "242.2951ms"}
+2026-01-11 15:52:02	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "192.168.1.13", "method": "POST", "path": "/login", "status": 200, "duration": "232.7419ms"}
+2026-01-11 15:55:21	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/profile", "status": 200, "duration": "0s"}
+2026-01-11 15:55:47	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/profile", "status": 200, "duration": "1.1327ms"}
+2026-01-11 15:56:15	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/profile", "status": 200, "duration": "1.1581ms"}
+2026-01-11 15:56:29	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/profile", "status": 200, "duration": "0s"}
+2026-01-11 15:56:36	INFO	logging/logger.go:150	HTTP Request	{"client_ip": "127.0.0.1", "method": "GET", "path": "/profile", "status": 200, "duration": "2.0183ms"}

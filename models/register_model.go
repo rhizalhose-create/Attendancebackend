@@ -1,9 +1,10 @@
-// models/user_model.go
+// models/register_model.go
 
 package models
 
 import "time"
 
+// User represents a user in the system
 type User struct {
 	ID         uint      `json:"-" gorm:"primaryKey;autoIncrement"`
 	StudentID  string    `json:"student_id" gorm:"uniqueIndex;type:varchar(255);not null"`
@@ -36,27 +37,56 @@ type User struct {
 	OriginalQRType     string `json:"original_qr_type,omitempty" gorm:"type:varchar(50)"`
 }
 
+// RegisterRequest for user registration
 type RegisterRequest struct {
-	StudentID      string `json:"student_id,omitempty"`
-	Email          string `json:"email"`
-	Password       string `json:"password"`
-	Username       string `json:"username"`
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	MiddleName     string `json:"middle_name,omitempty"`
-	Course         string `json:"course"`
-	YearLevel      string `json:"year_level"`
-	Section        string `json:"section,omitempty"`
-	Department     string `json:"department,omitempty"`
-	College        string `json:"college,omitempty"`
-	ContactNumber  string `json:"contact_number,omitempty"`
-	Address        string `json:"address,omitempty"`
+	StudentID     string `json:"student_id,omitempty"`
+	Email         string `json:"email"`
+	Password      string `json:"password"`
+	Username      string `json:"username"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	MiddleName    string `json:"middle_name,omitempty"`
+	Course        string `json:"course"`
+	YearLevel     string `json:"year_level"`
+	Section       string `json:"section,omitempty"`
+	Department    string `json:"department,omitempty"`
+	College       string `json:"college,omitempty"`
+	ContactNumber string `json:"contact_number,omitempty"`
+	Address       string `json:"address,omitempty"`
 }
 
-const (
-	RoleSuperAdmin = "superadmin"
-	RoleAdmin      = "admin"
-	RoleFaculty    = "faculty"
-	RoleStaff      = "staff"
-	RoleStudent    = "student"
-)
+// UpdateUserRequest for user profile updates
+type UpdateUserRequest struct {
+	FirstName     string `json:"first_name,omitempty"`
+	LastName      string `json:"last_name,omitempty"`
+	MiddleName    string `json:"middle_name,omitempty"`
+	Course        string `json:"course,omitempty"`
+	YearLevel     string `json:"year_level,omitempty"`
+	Section       string `json:"section,omitempty"`
+	Department    string `json:"department,omitempty"`
+	College       string `json:"college,omitempty"`
+	ContactNumber string `json:"contact_number,omitempty"`
+	Address       string `json:"address,omitempty"`
+}
+
+// UserResponse for API responses
+type UserResponse struct {
+	ID            uint      `json:"id"`
+	StudentID     string    `json:"student_id"`
+	Email         string    `json:"email"`
+	Username      string    `json:"username"`
+	Role          string    `json:"role"`
+	IsVerified    bool      `json:"is_verified"`
+	FirstName     string    `json:"first_name"`
+	LastName      string    `json:"last_name"`
+	MiddleName    string    `json:"middle_name,omitempty"`
+	Course        string    `json:"course,omitempty"`
+	YearLevel     string    `json:"year_level,omitempty"`
+	Section       string    `json:"section,omitempty"`
+	Department    string    `json:"department,omitempty"`
+	College       string    `json:"college,omitempty"`
+	ContactNumber string    `json:"contact_number,omitempty"`
+	Address       string    `json:"address,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	VerifiedAt    time.Time `json:"verified_at,omitempty"`
+}
