@@ -51,7 +51,6 @@ type RegisterRequest struct {
 	College        string `json:"college,omitempty"`
 	ContactNumber  string `json:"contact_number,omitempty"`
 	Address        string `json:"address,omitempty"`
-	RecaptchaToken string `json:"recaptcha_token,omitempty"`
 }
 
 const (

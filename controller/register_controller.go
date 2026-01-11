@@ -8,32 +8,24 @@ import (
 )
 
 func Register(c *fiber.Ctx) error {
-	var req struct {
-		Email          string `json:"email"`
-		Password       string `json:"password"`
-		Name           string `json:"name"`
-		RecaptchaToken string `json:"recaptcha_token"`
-	}
+	var req models.RegisterRequest
 
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	if req.Email == "" || req.Password == "" || req.Name == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "All fields are required"})
+	if req.Email == "" || req.Password == "" || req.FirstName == "" || req.LastName == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Email, password, first name, and last name are required"})
 	}
 
-	_, err := services.RegisterService(models.RegisterRequest{
-		Email:     req.Email,
-		Password:  req.Password,
-		FirstName: req.Name,
-	})
+	studentID, err := services.RegisterService(req)
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Registration failed"})
+		return c.Status(400).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "Register endpoint - implement logic",
-		"status":  "success",
+	return c.Status(201).JSON(fiber.Map{
+		"message":    "Registration successful. Please check your email to verify your account.",
+		"student_id": studentID,
+		"status":     "success",
 	})
 }

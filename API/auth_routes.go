@@ -8,20 +8,20 @@ import (
 )
 
 func AuthRoutes(app *fiber.App) {
+	// PUBLIC routes - NO authentication required (Password Reset with CODE) - FIRST!
 	app.Post("/register", controller.Register)
 	app.Post("/login", controller.Login)
 	app.Post("/verify", controller.VerifyEmail)
 	app.Post("/refresh-token", controller.RefreshToken)
+	app.Post("/forgot-password", controller.ForgotPassword)
+	app.Post("/reset-password", controller.ResetPassword)
+	app.Post("/resend-reset-code", controller.ResendCode)
 
 	// Protected routes (require authentication)
 	protected := app.Group("", middleware.RequireAuth)
 	{
 		protected.Get("/profile", controller.GetProfile)
 	}
-
-	app.Post("/forgot-password", controller.ForgotPassword)
-	app.Post("/reset-password", controller.ResetPassword)
-	app.Post("/resend-reset-code", controller.ResendCode)
 
 	adminRoutes := app.Group("/admin", middleware.RequireAuth, middleware.RequireSuperAdmin)
 	{

@@ -49,7 +49,7 @@ func MarkAttendance(req models.AttendanceRequest, markedBy, markedByRole string)
 	// Handle actions via small helpers
 	switch req.Action {
 	case "check_in":
-		if err := applyCheckIn(&attendance, now, event, student); err != nil {
+		if err := applyCheckIn(&attendance, now, event, student, markedByRole); err != nil {
 			return nil, err
 		}
 	case "check_out":
@@ -85,10 +85,34 @@ func determineTimeStatus(actualTime time.Time, expectedTime time.Time, gracePeri
 }
 
 // applyCheckIn applies check-in logic to the attendance record
-func applyCheckIn(att *models.Attendance, now time.Time, event models.Event, student models.User) error {
+// Students can check in starting 2 hours before event start until event ends
+// Faculty/Admin can check in anytime (for setup/testing)
+func applyCheckIn(att *models.Attendance, now time.Time, event models.Event, student models.User, markedByRole string) error {
 	if att.CheckInTime != nil {
 		return errors.New("already checked in")
 	}
+
+	// Faculty and admin can scan anytime (for setup/testing purposes)
+	if markedByRole == "faculty" || markedByRole == "admin" || markedByRole == "superadmin" {
+		// Admins/faculty can scan anytime, but still within event availability
+		// Allow scanning up to 1 day after event ends
+		if now.After(event.EndTime.Add(24 * time.Hour)) {
+			return errors.New("event has ended more than 24 hours ago. Check-in is no longer allowed")
+		}
+	} else {
+		// Students: Allow check-in 2 hours before event start until event ends (real-time scanning)
+		earliestCheckIn := event.StartTime.Add(-2 * time.Hour)
+		if now.Before(earliestCheckIn) {
+			hoursUntilCheckIn := earliestCheckIn.Sub(now).Hours()
+			return fmt.Errorf("event check-in not yet available. Available in %.0f hours", hoursUntilCheckIn)
+		}
+
+		// Allow check-in until event actually ends (real-time scanning during event)
+		if now.After(event.EndTime) {
+			return errors.New("event has already ended. Check-in is no longer allowed")
+		}
+	}
+
 	att.CheckInTime = &now
 	checkInStatus := determineTimeStatus(now, event.StartTime, 15*time.Minute)
 	att.CheckInStatus = checkInStatus

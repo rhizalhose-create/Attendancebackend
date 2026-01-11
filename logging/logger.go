@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -13,23 +14,34 @@ import (
 // Logger is the global logger instance
 var Logger *zap.Logger
 
-// InitLogger initializes the modern logging system
+// currentLogFile tracks the current log file for daily rotation
+var currentLogFile string
+
+// InitLogger initializes the modern logging system with daily log rotation
 func InitLogger() error {
 	// Create logs directory if it doesn't exist
 	if err := os.MkdirAll("logs", 0755); err != nil {
 		return err
 	}
 
-	// Generate filename with current date
+	// Generate initial filename with current date
 	currentDate := time.Now().Format("2006-01-02")
 	filename := fmt.Sprintf("logs/ATENDIFY-%s.log", currentDate)
+	currentLogFile = filename
+
+	// Create the log file immediately
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create log file: %w", err)
+	}
+	file.Close()
 
 	// Configure lumberjack for file rotation
 	fileWriter := &lumberjack.Logger{
-		Filename:   filename, // Date-based filename
-		MaxSize:    10,
+		Filename:   filename,
+		MaxSize:    10, // MB
 		MaxBackups: 30,
-		MaxAge:     30,
+		MaxAge:     30, // days
 		Compress:   true,
 	}
 
@@ -49,7 +61,7 @@ func InitLogger() error {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	})
 
-	// Console encoder (human-readable)
+	// Console encoder (human-readable with colors)
 	consoleEncoder := zapcore.NewConsoleEncoder(zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
 		LevelKey:       "level",
@@ -65,16 +77,61 @@ func InitLogger() error {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	})
 
+	// Create file syncer with daily rotation wrapper
+	fileSyncer := NewDailyRotatingWriter(fileWriter)
+
 	// Create cores
-	fileCore := zapcore.NewCore(fileEncoder, zapcore.AddSync(fileWriter), zapcore.InfoLevel)
+	fileCore := zapcore.NewCore(fileEncoder, fileSyncer, zapcore.DebugLevel)
 	consoleCore := zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), zapcore.DebugLevel)
 
-	// Combine cores (logs go to both)
+	// Combine cores (logs go to both file and console)
 	core := zapcore.NewTee(fileCore, consoleCore)
 
-	// Create logger
+	// Create logger with caller information
 	Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
+	return nil
+}
+
+// DailyRotatingWriter wraps lumberjack to handle daily log rotation
+type DailyRotatingWriter struct {
+	writer   *lumberjack.Logger
+	lastDate string
+	mu       sync.Mutex
+}
+
+// NewDailyRotatingWriter creates a new daily rotating writer
+func NewDailyRotatingWriter(writer *lumberjack.Logger) zapcore.WriteSyncer {
+	currentDate := time.Now().Format("2006-01-02")
+	return &DailyRotatingWriter{
+		writer:   writer,
+		lastDate: currentDate,
+	}
+}
+
+// Write implements io.Writer and handles daily rotation
+func (d *DailyRotatingWriter) Write(p []byte) (n int, err error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	currentDate := time.Now().Format("2006-01-02")
+
+	// Check if date has changed, update filename if needed
+	if currentDate != d.lastDate {
+		d.lastDate = currentDate
+		newFilename := fmt.Sprintf("logs/ATENDIFY-%s.log", currentDate)
+		d.writer.Filename = newFilename
+		currentLogFile = newFilename
+	}
+
+	return d.writer.Write(p)
+}
+
+// Sync flushes any buffered log entries to disk
+func (d *DailyRotatingWriter) Sync() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	// lumberjack doesn't have Sync, but writes are flushed automatically
 	return nil
 }
 

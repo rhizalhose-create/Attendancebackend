@@ -35,13 +35,36 @@ func Connect() {
 	}
 
 	// Auto migrate ALL tables
-	db.AutoMigrate(
-		&models.User{},
-		&models.PendingUser{},
-		&models.PasswordReset{},
-		&models.Event{},
-		&models.Attendance{},
-	)
+	// Note: AutoMigrate can cause issues with existing constraints.
+	// Only uncomment if you're starting with a fresh database.
+	// db.AutoMigrate(
+	// 	&models.User{},
+	// 	&models.PendingUser{},
+	// 	&models.PasswordReset{},
+	// 	&models.Event{},
+	// 	&models.Attendance{},
+	// )
+
+	// Create audit_logs table if it doesn't exist
+	if !db.Migrator().HasTable("audit_logs") {
+		db.Exec(`
+			CREATE TABLE audit_logs (
+				id SERIAL PRIMARY KEY,
+				action VARCHAR(255) NOT NULL,
+				actor_id VARCHAR(255) NOT NULL,
+				target_id VARCHAR(255),
+				details TEXT,
+				ip_address VARCHAR(255),
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+			)
+		`)
+		// Create indexes for audit_logs
+		db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)")
+		db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_id ON audit_logs(actor_id)")
+		db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at)")
+		db.Exec("CREATE INDEX IF NOT EXISTS idx_audit_logs_target_id ON audit_logs(target_id)")
+		log.Println("audit_logs table created successfully!")
+	}
 
 	// Ensure `tagged_courses` column exists for older databases that may
 	// not have been migrated to include the new field. Prefer GORM Migrator

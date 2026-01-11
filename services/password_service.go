@@ -57,8 +57,8 @@ func ForgotPassword(email string) (string, error) {
 	htmlBody := BuildHTMLEmail("Password reset code", "Password Reset Code", content, footer)
 
 	if err := SendEmail(email, "Password Reset Code - Attendance System", htmlBody); err != nil {
-		// Log error without exposing sensitive information
-		fmt.Printf("Failed to send reset email\n")
+		// Log error without exposing sensitive information to client
+		fmt.Printf("Failed to send reset email to %s: %v\n", email, err)
 	}
 
 	return code, nil
@@ -114,8 +114,8 @@ func ResetPasswordWithCode(email, code, newPassword string) error {
 	htmlBody := BuildHTMLEmail("Password changed", "Password Changed", content, footer)
 
 	if err := SendEmail(email, "Password Changed - Attendance System", htmlBody); err != nil {
-		// Log error without exposing sensitive information
-		fmt.Printf("Failed to send confirmation email\n")
+		// Log error without exposing sensitive information to client
+		fmt.Printf("Failed to send confirmation email to %s: %v\n", email, err)
 	}
 
 	return nil

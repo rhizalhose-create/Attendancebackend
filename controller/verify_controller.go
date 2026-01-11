@@ -79,7 +79,7 @@ func VerifyEmail(c *fiber.Ctx) error {
 	connection.DB.Delete(&pending)
 
 	return c.JSON(fiber.Map{
-		"message": "Verify email endpoint - implement logic",
+		"message": "Verify email successful",
 		"status":  "success",
 	})
 }

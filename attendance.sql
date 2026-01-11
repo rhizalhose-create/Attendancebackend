@@ -155,3 +155,20 @@ FOREIGN KEY (active_event_id) REFERENCES events(id) ON DELETE SET NULL;
 
 
 CREATE INDEX IF NOT EXISTS idx_users_active_event_id ON users(active_event_id);
+
+-- Create audit_logs table for tracking admin actions
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id SERIAL PRIMARY KEY,
+    action VARCHAR(255) NOT NULL,
+    actor_id VARCHAR(255) NOT NULL,
+    target_id VARCHAR(255),
+    details TEXT,
+    ip_address VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for audit_logs table
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_id ON audit_logs(actor_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_target_id ON audit_logs(target_id);

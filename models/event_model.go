@@ -56,7 +56,5 @@ type EventRequest struct {
 	YearLevel      string `json:"year_level"`
 	Department     string `json:"department"`
 	College        string `json:"college"`
-	RecaptchaToken string `json:"recaptcha_token,omitempty"`
-	// Support tagging multiple courses on create/update
 	TaggedCourses []string `json:"tagged_courses,omitempty"`
 }

@@ -46,10 +46,8 @@ func RegisterService(req models.RegisterRequest) (string, error) {
 	}
 
 	if err := sendVerificationEmail(req.Email, studentID, verificationCode); err != nil {
-		// Log error for debugging - include the actual error details
-		fmt.Printf("Failed to send verification email to %s: %v\n", req.Email, err)
-		// Note: We continue with registration even if email fails.
-		// In production, consider implementing an email retry mechanism or queue.
+		// Log error without exposing sensitive information
+		fmt.Printf("Failed to send verification email\n")
 	}
 
 	return studentID, nil
