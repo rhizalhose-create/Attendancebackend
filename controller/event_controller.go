@@ -213,3 +213,11 @@ func DeleteEvent(c *fiber.Ctx) error {
 		"message": "Event deleted successfully",
 	})
 }
+
+// GetEventCreationDropdowns returns predefined sections and departments for event creation
+func GetEventCreationDropdowns(c *fiber.Ctx) error {
+	return c.Status(200).JSON(fiber.Map{
+		"sections":    utils.Sections,
+		"departments": utils.Departments,
+	})
+}
