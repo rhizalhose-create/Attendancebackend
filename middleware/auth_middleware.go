@@ -64,7 +64,7 @@ func RequireSuperAdmin(c *fiber.Ctx) error {
 	}
 
 	// Check if user is superadmin
-	if user.Role != "superadmin" {
+	if user.Role != models.RoleSuperAdmin {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Access denied - superadmin role required",
 		})
@@ -104,6 +104,39 @@ func RequireAuth(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// RequireAdmin - middleware for organization/event managers (admin + superadmin)
+func RequireAdmin(c *fiber.Ctx) error {
+	studentID, _, err := extractStudentID(c)
+	if err != nil {
+		return err
+	}
+
+	// Find user
+	var user models.User
+	if err := connection.DB.Where("student_id = ?", studentID).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User not found",
+		})
+	}
+
+	// Allow both admin and superadmin
+	if user.Role != models.RoleAdmin && user.Role != models.RoleSuperAdmin {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Access denied - admin role required",
+		})
+	}
+
+	// Ensure verified
+	if !user.IsVerified {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error": "Account not verified. Please verify your email first.",
+		})
+	}
+
+	c.Locals("user", user)
+	return c.Next()
+}
+
 // RequireFacultyOrAdmin - Requires faculty, admin, or superadmin role
 func RequireFacultyOrAdmin(c *fiber.Ctx) error {
 	user, ok := c.Locals("user").(models.User)
@@ -114,9 +147,9 @@ func RequireFacultyOrAdmin(c *fiber.Ctx) error {
 	}
 
 	validRoles := map[string]bool{
-		"superadmin": true,
-		"admin":      true,
-		"faculty":    true,
+		models.RoleSuperAdmin: true,
+		models.RoleAdmin:      true,
+		models.RoleFaculty:    true,
 	}
 
 	if !validRoles[user.Role] {

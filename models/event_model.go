@@ -33,6 +33,7 @@ type Event struct {
 	TaggedCoursesCSV string `json:"-" gorm:"type:text;column:tagged_courses"`
 	// Transient fields (not persisted by GORM)
 	TaggedCourses []string `json:"tagged_courses,omitempty" gorm:"-"`
+	AttendeeCount int      `json:"attendee_count" gorm:"-"`
 	Allowed       bool     `json:"allowed,omitempty" gorm:"-"`
 
 	// Timestamps
@@ -45,16 +46,16 @@ type Event struct {
 
 // EventRequest for creating/updating events
 type EventRequest struct {
-	Title          string `json:"title"`
-	Description    string `json:"description"`
-	EventDate      string `json:"event_date"` // ISO 8601 format
-	StartTime      string `json:"start_time"` // ISO 8601 format
-	EndTime        string `json:"end_time"`   // ISO 8601 format
-	Location       string `json:"location"`
-	Course         string `json:"course"`
-	Section        string `json:"section"`
-	YearLevel      string `json:"year_level"`
-	Department     string `json:"department"`
-	College        string `json:"college"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	EventDate     string   `json:"event_date"` // ISO 8601 format
+	StartTime     string   `json:"start_time"` // ISO 8601 format
+	EndTime       string   `json:"end_time"`   // ISO 8601 format
+	Location      string   `json:"location"`
+	Course        string   `json:"course"`
+	Section       string   `json:"section"`
+	YearLevel     string   `json:"year_level"`
+	Department    string   `json:"department"`
+	College       string   `json:"college"`
 	TaggedCourses []string `json:"tagged_courses,omitempty"`
 }

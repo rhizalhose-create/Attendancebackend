@@ -34,6 +34,10 @@ type Attendance struct {
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 
+	// Transient fields - not persisted to database
+	TotalAttendanceCount int `json:"total_attendance_count" gorm:"-"` // Total attendance count for this student
+	EventAttendanceCount int `json:"event_attendance_count" gorm:"-"` // Total attendance count for the event
+
 	// Relationships
 	Event   Event `json:"event,omitempty" gorm:"foreignKey:EventID"`
 	Student User  `json:"student,omitempty" gorm:"foreignKey:StudentID;references:StudentID"`

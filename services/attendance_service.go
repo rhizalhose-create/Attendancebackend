@@ -66,6 +66,19 @@ func MarkAttendance(req models.AttendanceRequest, markedBy, markedByRole string)
 	// Attach student info to the returned attendance so callers (e.g., admin scan)
 	// can immediately show the student's name without an extra request.
 	attendance.Student = student
+
+	// Calculate total attendance count for this student
+	var studentCount int64
+	if err := connection.DB.Model(&models.Attendance{}).Where("student_id = ?", studentID).Count(&studentCount).Error; err == nil {
+		attendance.TotalAttendanceCount = int(studentCount)
+	}
+
+	// Calculate total attendance count for the event
+	var eventCount int64
+	if err := connection.DB.Model(&models.Attendance{}).Where("event_id = ?", req.EventID).Count(&eventCount).Error; err == nil {
+		attendance.EventAttendanceCount = int(eventCount)
+	}
+
 	return &attendance, nil
 }
 
@@ -243,8 +256,9 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 	hasCourseRestriction := event.Course != ""
 	hasTaggedCourses := event.TaggedCoursesCSV != ""
 
-	// If event has NO course restrictions, allow all students
+	// If event has ANY course restrictions, enforce them strictly
 	if !hasCourseRestriction && !hasTaggedCourses {
+		// No restrictions, allow all students
 		return nil
 	}
 
@@ -284,7 +298,7 @@ func enforceEventCourseAccess(event models.Event, student models.User, markedByR
 		if !courseAllowed {
 			return ErrEventAccessDenied
 		}
-		
+
 		// Course is in tagged courses, now check year level and department if specified
 		if event.YearLevel != "" && strings.ToUpper(strings.TrimSpace(event.YearLevel)) != userYearLevel {
 			return ErrEventAccessDenied

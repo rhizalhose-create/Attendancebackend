@@ -7,10 +7,11 @@ import (
 	"attendance-system/utils"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 )
 
-func RegisterService(req models.RegisterRequest) (string, error) {
+func RegisterService(req models.RegisterRequest) (string, string, error) {
 	// Sanitize inputs
 	req.Email = utils.SanitizeEmail(req.Email)
 	if req.StudentID != "" {
@@ -18,39 +19,64 @@ func RegisterService(req models.RegisterRequest) (string, error) {
 	}
 
 	if err := validateRegistrationInput(req); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	studentID, err := generateOrValidateStudentID(req.StudentID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if err := checkEmailDuplicates(req.Email); err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	verificationCode, err := utils.GenerateVerificationCode()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate verification code: %w", err)
+		return "", "", fmt.Errorf("failed to generate verification code: %w", err)
 	}
 
 	_, err = createPendingUser(req, studentID, hashedPassword, verificationCode)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if err := sendVerificationEmail(req.Email, studentID, verificationCode); err != nil {
-		// Log error without exposing sensitive information
-		fmt.Printf("Failed to send verification email\n")
+		// Log detailed error for debugging
+		fmt.Printf("❌ Failed to send verification email to %s: %v\n", req.Email, err)
+		// Check if SMTP is configured
+		smtpHost := os.Getenv("SMTP_HOST")
+		smtpUser := os.Getenv("SMTP_USER")
+		smtpPass := os.Getenv("SMTP_PASS")
+		if smtpHost == "" || smtpUser == "" || smtpPass == "" {
+			fmt.Printf("⚠️  WARNING: SMTP configuration is missing!\n")
+			fmt.Printf("   SMTP_HOST: %s\n", smtpHost)
+			fmt.Printf("   SMTP_USER: %s\n", smtpUser)
+			fmt.Printf("   SMTP_PASS: %s\n", func() string {
+				if smtpPass == "" {
+					return "(not set)"
+				}
+				return "***" // Don't print actual password
+			}())
+			fmt.Printf("   Please set SMTP_HOST, SMTP_USER, and SMTP_PASS environment variables.\n")
+		}
+		// Note: Registration still succeeds even if email fails - user can use token to verify
+	} else {
+		fmt.Printf("✅ Verification email sent successfully to %s\n", req.Email)
 	}
 
-	return studentID, nil
+	// Generate email verification token
+	token, err := GenerateEmailVerificationToken(req.Email, verificationCode)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate verification token: %w", err)
+	}
+
+	return studentID, token, nil
 }
 
 func validateRegistrationInput(req models.RegisterRequest) error {
@@ -174,4 +200,41 @@ func sendVerificationEmail(email, studentID, verificationCode string) error {
 	htmlBody := BuildHTMLEmail("Verify your email", "Email Verification", content, footer)
 
 	return SendEmail(email, "Verification Code - Attendance System", htmlBody)
+}
+
+// ResendVerificationEmail resends verification email for pending registration
+func ResendVerificationEmail(email string) (string, string, error) {
+	var pending models.PendingUser
+	if err := connection.DB.Where("email = ?", email).First(&pending).Error; err != nil {
+		return "", "", errors.New("registration not found or already verified")
+	}
+
+	// Generate new verification code
+	verificationCode, err := utils.GenerateVerificationCode()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate verification code: %w", err)
+	}
+
+	// Update pending user with new code and extend expiry
+	pending.VerificationCode = verificationCode
+	pending.ExpiresAt = time.Now().Add(30 * time.Minute)
+	if err := connection.DB.Save(&pending).Error; err != nil {
+		return "", "", fmt.Errorf("failed to update pending user: %v", err)
+	}
+
+	// Send email
+	if err := sendVerificationEmail(pending.Email, pending.StudentID, verificationCode); err != nil {
+		fmt.Printf("❌ Failed to resend verification email to %s: %v\n", email, err)
+		return "", "", fmt.Errorf("failed to send verification email: %w", err)
+	}
+
+	fmt.Printf("✅ Verification email resent successfully to %s\n", email)
+
+	// Generate new token
+	token, err := GenerateEmailVerificationToken(pending.Email, verificationCode)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate verification token: %w", err)
+	}
+
+	return pending.StudentID, token, nil
 }

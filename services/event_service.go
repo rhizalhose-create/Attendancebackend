@@ -158,6 +158,29 @@ func generateEventQRCode(createdBy string) (string, error) {
 	return base64Prefix + base64.StdEncoding.EncodeToString(qrCodePNG), nil
 }
 
+// GetEventQRCode returns the QR code for an event, generating and persisting one if missing.
+func GetEventQRCode(eventID uint) (string, error) {
+	var event models.Event
+	if err := connection.DB.First(&event, eventID).Error; err != nil {
+		return "", fmt.Errorf("event not found")
+	}
+
+	if event.QRCodeData != "" {
+		return event.QRCodeData, nil
+	}
+
+	qrCodeBase64, err := generateEventQRCode(event.CreatedBy)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate QR code: %v", err)
+	}
+
+	if err := connection.DB.Model(&event).Update("qr_code_data", qrCodeBase64).Error; err != nil {
+		return "", fmt.Errorf("failed to save QR code: %v", err)
+	}
+
+	return qrCodeBase64, nil
+}
+
 // updateStudentQRCodesForEvent updates QR codes for students matching event criteria
 func updateStudentQRCodesForEvent(eventID uint, courses []string, yearLevel, section string) {
 	var students []models.User
@@ -306,9 +329,18 @@ func CheckAndUpdateCompletedEvents() {
 // GetEvent retrieves an event by ID
 func GetEvent(eventID uint) (*models.Event, error) {
 	var event models.Event
-	if err := connection.DB.Preload("Attendances").First(&event, eventID).Error; err != nil {
+	if err := connection.DB.First(&event, eventID).Error; err != nil {
 		return nil, errors.New(errEventNotFound)
 	}
+
+	// Calculate attendee count
+	var count int64
+	if err := connection.DB.Model(&models.Attendance{}).Where("event_id = ?", eventID).Count(&count).Error; err != nil {
+		event.AttendeeCount = 0
+	} else {
+		event.AttendeeCount = int(count)
+	}
+
 	// Hide description until 24 hours before the event start_time
 	if time.Now().Before(event.StartTime.Add(-24 * time.Hour)) {
 		event.Description = ""
@@ -320,7 +352,7 @@ func GetEvent(eventID uint) (*models.Event, error) {
 // GetAllEvents retrieves all events with optional filters
 func GetAllEvents(filters map[string]interface{}) ([]models.Event, error) {
 	var events []models.Event
-	query := connection.DB.Preload("Attendances")
+	query := connection.DB
 
 	// Apply filters
 	if course, ok := filters["course"].(string); ok && course != "" {
@@ -341,6 +373,16 @@ func GetAllEvents(filters map[string]interface{}) ([]models.Event, error) {
 
 	if err := query.Order("event_date DESC, start_time DESC").Find(&events).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch events: %v", err)
+	}
+
+	// Calculate attendee count for each event
+	for i := range events {
+		var count int64
+		if err := connection.DB.Model(&models.Attendance{}).Where("event_id = ?", events[i].ID).Count(&count).Error; err != nil {
+			events[i].AttendeeCount = 0
+		} else {
+			events[i].AttendeeCount = int(count)
+		}
 	}
 
 	// Hide description for events that are more than 24 hours away
@@ -528,6 +570,16 @@ func GetEventsByStudent(studentID string) ([]models.Event, error) {
 	query := connection.DB.Where("is_active = ?", true)
 	if err := query.Order("event_date DESC, start_time DESC").Find(&events).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch events: %v", err)
+	}
+
+	// Calculate attendee count for each event
+	for i := range events {
+		var count int64
+		if err := connection.DB.Model(&models.Attendance{}).Where("event_id = ?", events[i].ID).Count(&count).Error; err != nil {
+			events[i].AttendeeCount = 0
+		} else {
+			events[i].AttendeeCount = int(count)
+		}
 	}
 
 	populateTaggedCoursesAndAllowed(events, &user)
