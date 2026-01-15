@@ -14,16 +14,17 @@ import (
 var DB *gorm.DB
 
 func Connect() {
-	// Load local .env if exists (for local testing)
+	// Load local .env.local first (for local development)
+	godotenv.Load(".env.local")
+	// Then load .env for fallback
 	godotenv.Load()
 
-	// Prefer DATABASE_URL (Neon or Render)
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		log.Println("DATABASE_URL not found, falling back to local config")
+	// Prefer local DB config (development)
+	var dsn string
+	localHost := os.Getenv("DB_HOST")
 
-		// Fallback to local DB (optional, for local testing only)
-		localHost := os.Getenv("DB_HOST")
+	if localHost != "" {
+		// Use local database (localhost development)
 		localPort := os.Getenv("DB_PORT")
 		localUser := os.Getenv("DB_USER")
 		localPass := os.Getenv("DB_PASSWORD")
@@ -35,6 +36,17 @@ func Connect() {
 			" dbname=" + localDB +
 			" port=" + localPort +
 			" sslmode=disable"
+		log.Printf("✅ Using LOCAL database: %s@%s:%s/%s\n", localUser, localHost, localPort, localDB)
+	} else {
+		// Fall back to cloud database (DATABASE_URL)
+		dsn = os.Getenv("DATABASE_URL")
+		if dsn != "" {
+			log.Println("✅ Using CLOUD database (Neon)")
+		}
+	}
+
+	if dsn == "" {
+		log.Fatal("❌ No database configuration found! Please set DB_HOST or DATABASE_URL")
 	}
 
 	// Connect to PostgreSQL

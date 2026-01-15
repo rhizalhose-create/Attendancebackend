@@ -354,6 +354,12 @@ func GetAllEvents(filters map[string]interface{}) ([]models.Event, error) {
 	var events []models.Event
 	query := connection.DB
 
+	// By default, exclude deleted events (is_active = false)
+	// Only include deleted events if explicitly requested via filter
+	if _, hasIsActiveFilter := filters["is_active"]; !hasIsActiveFilter {
+		query = query.Where("is_active = ?", true)
+	}
+
 	// Apply filters
 	if course, ok := filters["course"].(string); ok && course != "" {
 		query = query.Where("course = ?", course)

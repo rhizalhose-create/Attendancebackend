@@ -40,11 +40,13 @@ func RegisterService(req models.RegisterRequest) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate verification code: %w", err)
 	}
+	fmt.Printf("✅ Generated verification code: %s\n", verificationCode)
 
 	_, err = createPendingUser(req, studentID, hashedPassword, verificationCode)
 	if err != nil {
 		return "", "", err
 	}
+	fmt.Printf("✅ Stored code in database: %s\n", verificationCode)
 
 	if err := sendVerificationEmail(req.Email, studentID, verificationCode); err != nil {
 		// Log detailed error for debugging
@@ -75,6 +77,7 @@ func RegisterService(req models.RegisterRequest) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate verification token: %w", err)
 	}
+	fmt.Printf("✅ Generated token with code: %s\n", verificationCode)
 
 	return studentID, token, nil
 }
@@ -202,11 +205,25 @@ func sendVerificationEmail(email, studentID, verificationCode string) error {
 	return SendEmail(email, "Verification Code - Attendance System", htmlBody)
 }
 
+// SendExistingVerificationEmail sends the existing verification code without generating a new one
+func SendExistingVerificationEmail(email, studentID, verificationCode string) error {
+	return sendVerificationEmail(email, studentID, verificationCode)
+}
+
 // ResendVerificationEmail resends verification email for pending registration
 func ResendVerificationEmail(email string) (string, string, error) {
+	// First, check if the email is already verified (in Users table)
+	var user models.User
+	userResult := connection.DB.Where("email = ?", email).First(&user)
+	if userResult.Error == nil {
+		// User exists and is already verified
+		return "", "", errors.New("user is already verified. Please login to your account")
+	}
+
+	// Check if email exists in pending users
 	var pending models.PendingUser
 	if err := connection.DB.Where("email = ?", email).First(&pending).Error; err != nil {
-		return "", "", errors.New("registration not found or already verified")
+		return "", "", errors.New("email not found. Please check if you registered with this email")
 	}
 
 	// Generate new verification code
@@ -224,10 +241,12 @@ func ResendVerificationEmail(email string) (string, string, error) {
 
 	// Send email
 	if err := sendVerificationEmail(pending.Email, pending.StudentID, verificationCode); err != nil {
+		fmt.Printf("📧 AuthService.resendVerificationCode called for %s\n", email)
 		fmt.Printf("❌ Failed to resend verification email to %s: %v\n", email, err)
 		return "", "", fmt.Errorf("failed to send verification email: %w", err)
 	}
 
+	fmt.Printf("📧 AuthService.resendVerificationCode called for %s\n", email)
 	fmt.Printf("✅ Verification email resent successfully to %s\n", email)
 
 	// Generate new token

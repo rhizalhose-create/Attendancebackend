@@ -4,6 +4,8 @@ import (
 	"attendance-system/models"
 	"attendance-system/services"
 	"attendance-system/utils"
+	"fmt"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -30,9 +32,15 @@ func ForgotPassword(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": ErrEmailRequired})
 	}
 
-	// Always return success (security), but get token
+	// Always return success (security), but get token if email exists
 	_, token, err := services.ForgotPassword(req.Email)
 	if err != nil {
+		// Still return success message for security, but with empty token
+		return c.JSON(fiber.Map{
+			"message": SuccessResetCodeSent,
+			"status":  "success",
+			"token":   "",
+		})
 	}
 
 	return c.JSON(fiber.Map{
@@ -42,13 +50,17 @@ func ForgotPassword(c *fiber.Ctx) error {
 	})
 }
 
-// VerifyResetCode verifies the reset code using bearer token
-// Request Header: Authorization: Bearer <token_from_forgot_password>
-// Request: { "code": "123456" }  <- code received in email
-// Response: { "message": "Code is valid", "status": "success" }
+// VerifyResetCode verifies the reset code using multiple methods
+// Methods:
+// 1) Authorization: Bearer <token> + { "code": "123456" } (preferred)
+// 2) Request body: { "token": "...", "code": "123456" }
+// 3) Fallback: { "email": "...", "code": "123456" } (simplest)
+// Response: { "message": "Code is valid", "status": "success", "token": "new_token_for_reset_password" }
 func VerifyResetCode(c *fiber.Ctx) error {
 	type VerifyRequest struct {
-		Code string `json:"code"`
+		Code  string `json:"code"`
+		Email string `json:"email,omitempty"`
+		Token string `json:"token,omitempty"`
 	}
 
 	req := new(VerifyRequest)
@@ -60,38 +72,91 @@ func VerifyResetCode(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": ErrCodeRequired})
 	}
 
-	// Get bearer token from Authorization header
+	// Trim code for consistent handling
+	req.Code = strings.TrimSpace(req.Code)
+	fmt.Printf("🔑 Verify Reset Code: Code=%s, Email=%s, HasToken=%v\n", req.Code, req.Email, req.Token != "")
+
+	var claims *models.PasswordResetTokenClaims
+	var token string
+
+	// Try to get token from Authorization header first
 	auth := c.Get("Authorization")
-	if auth == "" {
-		return c.Status(401).JSON(fiber.Map{"error": "Authorization header required"})
+	if auth != "" {
+		const bearerPrefix = "Bearer "
+		if len(auth) >= len(bearerPrefix) && auth[:len(bearerPrefix)] == bearerPrefix {
+			token = auth[len(bearerPrefix):]
+			fmt.Printf("📌 Found token in Authorization header\n")
+		}
 	}
 
-	// Extract token from "Bearer <token>"
-	const bearerPrefix = "Bearer "
-	if len(auth) < len(bearerPrefix) || auth[:len(bearerPrefix)] != bearerPrefix {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid authorization format. Use: Bearer <token>"})
+	// If no token in header, try request body
+	if token == "" && req.Token != "" {
+		token = req.Token
+		fmt.Printf("📌 Found token in request body\n")
 	}
 
-	token := auth[len(bearerPrefix):]
+	// Try to verify token if we have one
+	if token != "" {
+		var err error
+		claims, err = services.VerifyPasswordResetToken(token)
+		if err != nil {
+			fmt.Printf("⚠️ Token verification failed: %v. Trying email+code fallback...\n", err)
+			// If token fails and no email provided, return error
+			if req.Email == "" {
+				return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired token. Use email+code instead."})
+			}
+			// Otherwise fall through to email+code verification
+		} else {
+			fmt.Printf("✅ Token verified successfully\n")
+		}
+	}
 
-	// Verify the JWT token
-	claims, err := services.VerifyPasswordResetToken(token)
+	var email string
+
+	if claims != nil {
+		// Token is valid - use email from claims
+		email = claims.Email
+		fmt.Printf("📧 Using email from token: %s\n", email)
+
+		// Verify the code in database with the email from token
+		err := services.VerifyResetCodeDB(email, req.Code)
+		if err != nil {
+			fmt.Printf("❌ Code verification failed: %v\n", err)
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired code"})
+		}
+	} else {
+		// No valid token — verify by email + code (simplest method)
+		if req.Email == "" {
+			return c.Status(400).JSON(fiber.Map{
+				"error": "Email is required. Send: {\"email\": \"...\", \"code\": \"123456\"} or use Authorization header with token",
+			})
+		}
+
+		email = strings.TrimSpace(req.Email)
+		fmt.Printf("📧 Verifying by email+code: %s | code: %s\n", email, req.Code)
+
+		// Verify the code in database
+		err := services.VerifyResetCodeDB(email, req.Code)
+		if err != nil {
+			fmt.Printf("❌ Code verification failed: %v\n", err)
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired code"})
+		}
+	}
+
+	fmt.Printf("✅ Code verified successfully for: %s\n", email)
+
+	// Code is valid - generate a new token for /reset-password endpoint
+	newToken, err := services.GeneratePasswordResetToken(email, req.Code)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid or expired token"})
+		fmt.Printf("❌ Failed to generate token: %v\n", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate token"})
 	}
 
-	// Verify the code in database with the email from token
-	err = services.VerifyResetCodeDB(claims.Email, req.Code)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired code"})
-	}
-
-	// Code is valid
 	return c.JSON(fiber.Map{
 		"message": SuccessCodeValid,
 		"status":  "success",
-		"email":   claims.Email,
-		"token":   auth[len("Bearer "):], // Return the same token for /reset-password
+		"email":   email,
+		"token":   newToken,
 	})
 }
 

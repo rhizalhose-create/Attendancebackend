@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"attendance-system/connection"
+	"attendance-system/models"
 	"attendance-system/services"
 	"fmt"
 
@@ -15,6 +17,37 @@ func GetSystemStats(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"stats": stats})
+}
+
+// GetAllUsersSuperadmin returns all users with detailed info (superadmin only)
+func GetAllUsersSuperadmin(c *fiber.Ctx) error {
+	var users []models.User
+
+	// Fetch all users from database
+	if err := connection.DB.
+		Select("id", "student_id", "email", "first_name", "last_name", "role", "is_verified", "created_at").
+		Find(&users).Error; err != nil {
+		errMsg := fmt.Sprintf("Failed to fetch users: %v", err)
+		println("❌ GetAllUsersSuperadmin Error: " + errMsg)
+		return c.Status(500).JSON(fiber.Map{
+			"error": errMsg,
+		})
+	}
+
+	// Get requesting user info for audit logging
+	user, ok := c.Locals("user").(models.User)
+	if ok {
+		log := fmt.Sprintf("🔍 GetAllUsersSuperadmin - User: %s (Role: %s) retrieved %d total users", user.StudentID, user.Role, len(users))
+		println(log)
+	} else {
+		println("⚠️  GetAllUsersSuperadmin - Could not extract user from locals for logging")
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "All users retrieved successfully",
+		"count":   len(users),
+		"data":    users,
+	})
 }
 
 // CreateAdmin creates a new admin account (superadmin only)

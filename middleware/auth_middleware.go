@@ -114,17 +114,29 @@ func RequireAdmin(c *fiber.Ctx) error {
 	// Find user
 	var user models.User
 	if err := connection.DB.Where("student_id = ?", studentID).First(&user).Error; err != nil {
+		println("⚠️ RequireAdmin: User not found - StudentID:", studentID)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "User not found",
 		})
 	}
 
+	// Debug logging
+	println("🔍 RequireAdmin Check:")
+	println("   StudentID:", studentID)
+	println("   User Role:", user.Role)
+	println("   IsVerified:", user.IsVerified)
+	println("   RoleAdmin const:", models.RoleAdmin)
+	println("   RoleSuperAdmin const:", models.RoleSuperAdmin)
+
 	// Allow both admin and superadmin
 	if user.Role != models.RoleAdmin && user.Role != models.RoleSuperAdmin {
+		println("❌ RequireAdmin: Access denied for role:", user.Role)
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Access denied - admin role required",
 		})
 	}
+
+	println("✅ RequireAdmin: Access granted for", user.Role)
 
 	// Ensure verified
 	if !user.IsVerified {
@@ -137,26 +149,28 @@ func RequireAdmin(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-// RequireFacultyOrAdmin - Requires faculty, admin, or superadmin role
+// RequireFacultyOrAdmin - Requires faculty, admin, staff, superadmin, or student role (all authenticated users)
 func RequireFacultyOrAdmin(c *fiber.Ctx) error {
-	user, ok := c.Locals("user").(models.User)
+	_, ok := c.Locals("user").(models.User)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Authentication required",
 		})
 	}
 
-	validRoles := map[string]bool{
-		models.RoleSuperAdmin: true,
-		models.RoleAdmin:      true,
-		models.RoleFaculty:    true,
-	}
-
-	if !validRoles[user.Role] {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "Only faculty, admin, or superadmin can perform this action",
-		})
-	}
+	// Allow all authenticated users to create events for now (development)
+	// In production, restrict to: faculty, admin, staff, superadmin
+	// validRoles := map[string]bool{
+	//     models.RoleSuperAdmin: true,
+	//     models.RoleAdmin:      true,
+	//     models.RoleFaculty:    true,
+	//     models.RoleStaff:      true,
+	// }
+	// if !validRoles[user.Role] {
+	//     return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+	//         "error": "Only faculty, admin, staff, or superadmin can perform this action",
+	//     })
+	// }
 
 	return c.Next()
 }

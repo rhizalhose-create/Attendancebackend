@@ -25,14 +25,21 @@ func ForgotPassword(email string) (string, string, error) {
 	var user models.User
 	if err := connection.DB.Where(emailQuery, email).First(&user).Error; err != nil {
 		// For security, don't reveal if email exists
+		fmt.Printf("❌ Email not found: %s\n", email)
 		return "", "", nil
 	}
+
+	// Delete any existing unused codes for this email
+	connection.DB.Where("email = ? AND used = ?", email, false).Delete(&models.PasswordReset{})
 
 	// Generate secure 6-digit code using crypto/rand
 	code, err := utils.GenerateVerificationCode()
 	if err != nil {
+		fmt.Printf("❌ Failed to generate code: %v\n", err)
 		return "", "", fmt.Errorf("failed to generate verification code: %w", err)
 	}
+
+	fmt.Printf("📧 Forgot password requested for email: %s | Code: %s\n", email, code)
 
 	// Save to password_resets table
 	reset := models.PasswordReset{
@@ -43,12 +50,16 @@ func ForgotPassword(email string) (string, string, error) {
 	}
 
 	if err := connection.DB.Omit("id").Create(&reset).Error; err != nil {
+		fmt.Printf("❌ Failed to save reset code to database: %v\n", err)
 		return "", "", fmt.Errorf("failed to create reset record: %v", err)
 	}
+
+	fmt.Printf("✅ Reset code saved to database\n")
 
 	// Generate JWT token for password reset flow
 	token, err := GeneratePasswordResetToken(email, code)
 	if err != nil {
+		fmt.Printf("❌ Failed to generate token: %v\n", err)
 		return code, "", fmt.Errorf("failed to generate reset token: %w", err)
 	}
 
@@ -65,18 +76,49 @@ func ForgotPassword(email string) (string, string, error) {
 
 	if err := SendEmail(email, "Password Reset Code - Attendance System", htmlBody); err != nil {
 		// Log error without exposing sensitive information to client
-		fmt.Printf("Failed to send reset email to %s: %v\n", email, err)
+		fmt.Printf("⚠️ Failed to send reset email to %s: %v\n", email, err)
+	} else {
+		fmt.Printf("✅ Reset email sent to %s\n", email)
 	}
 
 	return code, token, nil
 }
 
 func VerifyResetCode(email, code string) error {
+	// Sanitize inputs
+	email = utils.SanitizeEmail(email)
+	code = strings.TrimSpace(code)
+
+	fmt.Printf("🔍 Verifying reset code for email: %s | Code: %s\n", email, code)
+
 	var reset models.PasswordReset
-	if err := connection.DB.Where(codeQuery, email, code, false, time.Now()).First(&reset).Error; err != nil {
+	// Try exact match first
+	if err := connection.DB.Where(codeQuery, email, code, false, time.Now()).First(&reset).Error; err == nil {
+		fmt.Printf("✅ Code verified successfully (exact match)\n")
+		return nil
+	}
+
+	fmt.Printf("⚠️ Exact match failed, trying with trimming...\n")
+
+	// If exact match fails, fetch all valid codes for this email and compare with trimming
+	var allResets []models.PasswordReset
+	if err := connection.DB.Where("email = ? AND used = ? AND expires_at > ?", email, false, time.Now()).Find(&allResets).Error; err != nil {
+		fmt.Printf("❌ Failed to fetch codes from database: %v\n", err)
 		return errors.New("invalid or expired reset code")
 	}
-	return nil
+
+	fmt.Printf("📊 Found %d valid codes for email: %s\n", len(allResets), email)
+
+	// Check if any code matches (with trimming)
+	for _, r := range allResets {
+		if strings.TrimSpace(r.Code) == code {
+			fmt.Printf("✅ Code verified successfully (with trimming)\n")
+			return nil
+		}
+	}
+
+	fmt.Printf("❌ No matching code found\n")
+	return errors.New("invalid or expired reset code")
 }
 
 // VerifyResetCodeDB is an alias for VerifyResetCode for controller usage

@@ -17,24 +17,36 @@ import (
 )
 
 func main() {
-	// Load env
+	// ===============================
+	// LOAD ENV
+	// ===============================
 	_ = godotenv.Load()
 
-	// Init logger
+	// ===============================
+	// LOGGER
+	// ===============================
 	if err := logging.InitLogger(); err != nil {
 		fmt.Printf("Failed to initialize logger: %v\n", err)
 	}
 
-	// Database
+	// ===============================
+	// DATABASE
+	// ===============================
 	connection.Connect()
 
-	// Seed default admin
+	// ===============================
+	// SEED SUPER ADMIN
+	// ===============================
 	seeder.SeedSuperAdmin()
 
-	// Background job
+	// ===============================
+	// BACKGROUND JOB
+	// ===============================
 	go startEventStatusChecker()
 
-	// Fiber app
+	// ===============================
+	// FIBER APP
+	// ===============================
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
@@ -54,7 +66,9 @@ func main() {
 		BodyLimit: 10 * 1024 * 1024, // 10MB
 	})
 
-	// ---------------- MIDDLEWARE ----------------
+	// ===============================
+	// MIDDLEWARE
+	// ===============================
 
 	// Security headers
 	app.Use(middleware.SecurityHeaders)
@@ -62,9 +76,9 @@ func main() {
 	// Rate limiting
 	app.Use(middleware.RateLimit)
 
-	// CORS (Flutter Web SAFE)
+	// CORS (Flutter / APK SAFE)
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*", // DEV ONLY
+		AllowOrigins: "*", // change to domain in prod if needed
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		MaxAge:       300,
@@ -73,22 +87,36 @@ func main() {
 	// Request logger
 	app.Use(middleware.RequestLogger())
 
-	// ---------------- ROUTES ----------------
+	// ===============================
+	// ROUTES
+	// ===============================
 
 	API.AuthRoutes(app)
 	API.EventRoutes(app)
 	API.AttendanceRoutes(app)
 
-	// Health check
+	// ===============================
+	// PUBLIC HEALTH / PING
+	// ===============================
+
+	// Health check (NO AUTH)
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "ok",
 			"service": "attendance-backend",
-			"port":    "3000",
+			"time":    time.Now(),
 		})
 	})
 
-	// Root info
+	// Ping endpoint (USE THIS FOR APP INIT)
+	app.Get("/ping", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message": "pong",
+			"time":    time.Now(),
+		})
+	})
+
+	// Root info (NO AUTH)
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"remote_ip":  c.IP(),
@@ -97,7 +125,9 @@ func main() {
 		})
 	})
 
-	// ---------------- START SERVER ----------------
+	// ===============================
+	// START SERVER
+	// ===============================
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {
@@ -105,7 +135,8 @@ func main() {
 	}
 
 	fmt.Printf("\n🚀 Server running on port %s\n", port)
-	fmt.Printf("Health: http://localhost:%s/health\n", port)
+	fmt.Printf("🌍 Health: http://localhost:%s/health\n", port)
+	fmt.Printf("📡 Ping:   http://localhost:%s/ping\n", port)
 
 	defer logging.Logger.Sync()
 	if err := app.Listen(":" + port); err != nil {
@@ -113,7 +144,9 @@ func main() {
 	}
 }
 
-// Background job
+// ===============================
+// BACKGROUND JOB
+// ===============================
 func startEventStatusChecker() {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()

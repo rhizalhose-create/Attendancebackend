@@ -53,7 +53,7 @@ func MarkAttendance(req models.AttendanceRequest, markedBy, markedByRole string)
 			return nil, err
 		}
 	case "check_out":
-		if err := applyCheckOut(&attendance, now, event, student); err != nil {
+		if err := applyCheckOut(&attendance, now, event, student, markedByRole); err != nil {
 			return nil, err
 		}
 	}
@@ -135,11 +135,15 @@ func applyCheckIn(att *models.Attendance, now time.Time, event models.Event, stu
 		att.Status = "present"
 	}
 	go sendCheckInNotification(event, student, now, checkInStatus)
+	// Send notification to student (if marked by admin/superadmin)
+	if markedByRole == "admin" || markedByRole == "superadmin" {
+		go sendCheckInNotificationToUser(event, student, now, checkInStatus)
+	}
 	return nil
 }
 
 // applyCheckOut applies check-out logic to the attendance record
-func applyCheckOut(att *models.Attendance, now time.Time, event models.Event, student models.User) error {
+func applyCheckOut(att *models.Attendance, now time.Time, event models.Event, student models.User, markedByRole string) error {
 	if att.CheckInTime == nil {
 		return errors.New("must check in first before checking out")
 	}
@@ -150,6 +154,10 @@ func applyCheckOut(att *models.Attendance, now time.Time, event models.Event, st
 	checkOutStatus := determineTimeStatus(now, event.EndTime, 0)
 	att.CheckOutStatus = checkOutStatus
 	go sendCheckOutNotification(event, student, now, checkOutStatus)
+	// Send notification to student (if marked by admin/superadmin)
+	if markedByRole == "admin" || markedByRole == "superadmin" {
+		go sendCheckOutNotificationToUser(event, student, now, checkOutStatus)
+	}
 	return nil
 }
 
@@ -418,6 +426,64 @@ func sendCheckOutNotification(event models.Event, student models.User, checkOutT
 			SendEmail(admin.Email, fmt.Sprintf("Check-Out: %s %s - %s", student.FirstName, student.LastName, event.Title), htmlBody)
 		}
 	}
+}
+
+// sendCheckInNotificationToUser sends email to the student when admin/superadmin marks their check-in
+func sendCheckInNotificationToUser(event models.Event, student models.User, checkInTime time.Time, status string) {
+	if student.Email == "" {
+		return
+	}
+
+	// Format time
+	timeStr := checkInTime.Format("January 2, 2006 3:04 PM")
+	statusText := map[string]string{
+		"early":   "Early (arrived before scheduled time)",
+		"on_time": "On Time",
+		"late":    "Late",
+	}[status]
+
+	content := fmt.Sprintf(`<p>Hi <strong>%s</strong>,</p>
+		<p>Your check-in has been recorded for the event <strong>%s</strong>.</p>
+		<p><strong>Check-In Time:</strong> %s</p>
+		<p><strong>Status:</strong> %s</p>
+		<p><strong>Event Location:</strong> %s</p>
+		<p>If you have any questions, please contact the event organizer.</p>`,
+		student.FirstName, event.Title, timeStr, statusText, event.Location)
+
+	footer := `<p class="muted">This is an automated notification from the Attendance System.</p>`
+
+	htmlBody := BuildHTMLEmail("You have checked in", "Check-In Confirmation", content, footer)
+
+	SendEmail(student.Email, fmt.Sprintf("Check-In Confirmation: %s", event.Title), htmlBody)
+}
+
+// sendCheckOutNotificationToUser sends email to the student when admin/superadmin marks their check-out
+func sendCheckOutNotificationToUser(event models.Event, student models.User, checkOutTime time.Time, status string) {
+	if student.Email == "" {
+		return
+	}
+
+	// Format time
+	timeStr := checkOutTime.Format("January 2, 2006 3:04 PM")
+	statusText := map[string]string{
+		"early":   "Left Early",
+		"on_time": "On Time",
+		"late":    "Left Late",
+	}[status]
+
+	content := fmt.Sprintf(`<p>Hi <strong>%s</strong>,</p>
+		<p>Your check-out has been recorded for the event <strong>%s</strong>.</p>
+		<p><strong>Check-Out Time:</strong> %s</p>
+		<p><strong>Status:</strong> %s</p>
+		<p><strong>Event Location:</strong> %s</p>
+		<p>If you have any questions, please contact the event organizer.</p>`,
+		student.FirstName, event.Title, timeStr, statusText, event.Location)
+
+	footer := `<p class="muted">This is an automated notification from the Attendance System.</p>`
+
+	htmlBody := BuildHTMLEmail("You have checked out", "Check-Out Confirmation", content, footer)
+
+	SendEmail(student.Email, fmt.Sprintf("Check-Out Confirmation: %s", event.Title), htmlBody)
 }
 
 // GetAttendanceByEvent retrieves all attendance records for an event

@@ -4,6 +4,7 @@ import (
 	"attendance-system/connection"
 	"attendance-system/models"
 	"attendance-system/services"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,10 +17,17 @@ func GetAllUsers(c *fiber.Ctx) error {
 		})
 	}
 
+	// Log the request
+	user, ok := c.Locals("user").(models.User)
+	if ok {
+		log := fmt.Sprintf("GetAllUsers - User: %s (Role: %s) retrieved %d total users", user.StudentID, user.Role, len(users))
+		println("✅", log)
+	}
+
 	return c.JSON(fiber.Map{
 		"message": "Users retrieved successfully",
 		"status":  "success",
-		"users":   users,
+		"data":    users,
 	})
 }
 

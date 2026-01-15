@@ -7,33 +7,38 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES
+|--------------------------------------------------------------------------
+| PUBLIC: register, login, verify, password reset
+| PROTECTED: profile, QR, admin
+*/
 func AuthRoutes(app *fiber.App) {
-	// PUBLIC routes - NO authentication required
-	// Registration routes
-	app.Post("/register", controller.Register)
-	// New/expected route for verification
-	app.Post("/reg/verify", controller.VerifyEmail)
-	// Backwards-compatible routes used by older docs/tests
-	app.Post("/verify", controller.VerifyEmail)
-	app.Get("/verify", controller.VerifyEmail)
 
-	// Get registration dropdown options (departments, sections)
+	// ===============================
+	// PUBLIC AUTH ROUTES
+	// ===============================
+
+	app.Post("/register", controller.Register)
+
+	app.Post("/reg/verify", controller.VerifyEmail)
+	app.Post("/verify", controller.VerifyEmail)
+
 	app.Get("/registration-dropdowns", controller.GetRegistrationDropdowns)
-	// Resend verification email for registration
+	app.Post("/send-verification", controller.SendVerificationEmail)
 	app.Post("/resend-verification", controller.ResendVerificationEmail)
 
-	// Login routes
 	app.Post("/login", controller.Login)
 	app.Post("/refresh-token", controller.RefreshToken)
 
-	// Password Reset Routes - PUBLIC (no authentication required)
-	// Direct root level routes (easier for frontend)
+	// Password reset (PUBLIC)
 	app.Post("/forgot-password", controller.ForgotPassword)
 	app.Post("/verify-reset-code", controller.VerifyResetCode)
 	app.Post("/reset-password", controller.ResetPassword)
 	app.Post("/resend-code", controller.ResendCode)
 
-	// Also support /fgtp prefix group for backward compatibility
+	// Backward compatibility
 	fgtp := app.Group("/fgtp")
 	{
 		fgtp.Post("/forgot-password", controller.ForgotPassword)
@@ -42,28 +47,54 @@ func AuthRoutes(app *fiber.App) {
 		fgtp.Post("/resend-code", controller.ResendCode)
 	}
 
-	// Protected routes (require authentication)
-	protected := app.Group("", middleware.RequireAuth)
+	// ===============================
+	// PROTECTED AUTH ROUTES
+	// ===============================
+
+	protected := app.Group("/auth", middleware.RequireAuth)
 	{
 		protected.Get("/profile", controller.GetProfile)
-		// Return current user's QR code (base64 PNG data)
-		protected.Get("/users/me/qrcode", controller.GetMyQRCode)
+		protected.Get("/qrcode", controller.GetMyQRCode)
 	}
 
-	adminRoutes := app.Group("/admin", middleware.RequireAuth, middleware.RequireSuperAdmin)
+	// ===============================
+	// ADMIN ROUTES (Admin + Superadmin)
+	// ===============================
+
+	admin := app.Group("/admin", middleware.RequireAuth, middleware.RequireAdmin)
 	{
-		adminRoutes.Get("/users", controller.GetAllUsers)
-		adminRoutes.Get("/stats", controller.GetSystemStats)
-		adminRoutes.Post("/promote", controller.PromoteUser)
+		admin.Get("/users", controller.GetAllUsers)
+		admin.Get("/stats", controller.GetSystemStats)
+		admin.Post("/promote", controller.PromoteUser)
 	}
 
-	// Admin-level (organization managers) routes
-	// adminManager group reserved for admin-level routes; currently no endpoints defined.
+	// ===============================
+	// SUPERADMIN ROUTES (Superadmin Only)
+	// ===============================
+
+	superadmin := app.Group("/superadmin", middleware.RequireAuth, middleware.RequireSuperAdmin)
+	{
+		superadmin.Get("/users", controller.GetAllUsersSuperadmin)
+		superadmin.Get("/stats", controller.GetSystemStats)
+	}
 }
 
+/*
+|--------------------------------------------------------------------------
+| EVENT ROUTES
+|--------------------------------------------------------------------------
+*/
 func EventRoutes(app *fiber.App) {
-	// Public routes
+
+	// ===============================
+	// PUBLIC EVENT ROUTES
+	// ===============================
+
 	app.Get("/events/creation-dropdowns", controller.GetEventCreationDropdowns)
+
+	// ===============================
+	// AUTHENTICATED USERS
+	// ===============================
 
 	events := app.Group("/events", middleware.RequireAuth)
 	{
@@ -72,15 +103,32 @@ func EventRoutes(app *fiber.App) {
 		events.Get("/:id", controller.GetEvent)
 	}
 
-	eventsProtected := app.Group("/events", middleware.RequireAuth, middleware.RequireFacultyOrAdmin)
+	// ===============================
+	// FACULTY / ADMIN
+	// ===============================
+
+	eventsAdmin := app.Group("/events",
+		middleware.RequireAuth,
+		middleware.RequireFacultyOrAdmin,
+	)
 	{
-		eventsProtected.Post("/", controller.CreateEvent)
-		eventsProtected.Put("/:id", controller.UpdateEvent)
-		eventsProtected.Delete("/:id", controller.DeleteEvent)
+		eventsAdmin.Post("/", controller.CreateEvent)
+		eventsAdmin.Put("/:id", controller.UpdateEvent)
+		eventsAdmin.Delete("/:id", controller.DeleteEvent)
 	}
 }
 
+/*
+|--------------------------------------------------------------------------
+| ATTENDANCE ROUTES
+|--------------------------------------------------------------------------
+*/
 func AttendanceRoutes(app *fiber.App) {
+
+	// ===============================
+	// AUTHENTICATED USERS
+	// ===============================
+
 	attendance := app.Group("/attendance", middleware.RequireAuth)
 	{
 		attendance.Post("/mark", controller.MarkAttendance)
@@ -88,13 +136,28 @@ func AttendanceRoutes(app *fiber.App) {
 		attendance.Get("/stats", controller.GetAttendanceStats)
 	}
 
-	// Specific route for event attendance - must be after /forgot-password and public routes
-	attendanceByEvent := app.Group("/events/:event_id/attendance", middleware.RequireAuth)
+	// ===============================
+	// EVENT ATTENDANCE (ADMIN ONLY)
+	// ===============================
+
+	eventAttendance := app.Group(
+		"/events/:event_id/attendance",
+		middleware.RequireAuth,
+		middleware.RequireAdmin,
+	)
 	{
-		attendanceByEvent.Get("/", controller.GetAttendanceByEvent)
+		eventAttendance.Get("/", controller.GetAttendanceByEvent)
 	}
 
-	attendanceAdmin := app.Group("/attendance", middleware.RequireAuth, middleware.RequireFacultyOrAdmin)
+	// ===============================
+	// UPDATE STATUS (FACULTY / ADMIN)
+	// ===============================
+
+	attendanceAdmin := app.Group(
+		"/attendance",
+		middleware.RequireAuth,
+		middleware.RequireFacultyOrAdmin,
+	)
 	{
 		attendanceAdmin.Put("/:id/status", controller.UpdateAttendanceStatus)
 	}
